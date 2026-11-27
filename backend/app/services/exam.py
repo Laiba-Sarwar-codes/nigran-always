@@ -151,7 +151,11 @@ async def list_exams(
         stmt.order_by(Examination.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .options(selectinload(Examination.exam_questions))
+        .options(
+            selectinload(Examination.exam_questions)
+            .selectinload(ExamQuestion.question)
+            .selectinload(Question.choices)
+        )
     )
     rows = await db.execute(stmt)
     return rows.scalars().all(), total  # type: ignore[return-value]

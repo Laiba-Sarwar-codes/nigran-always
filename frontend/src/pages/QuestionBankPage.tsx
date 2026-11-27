@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Trash2, Edit2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, Trash2, Edit2, ChevronLeft, ChevronRight, Upload } from 'lucide-react'
 import { questionsService } from '@/services/exam'
 import type { Question, QuestionType } from '@/types/exam'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import QuestionFormModal from '@/components/exam/QuestionFormModal'
+import BulkUploadModal from '@/components/exam/BulkUploadModal'
 
 const TYPE_LABELS: Record<QuestionType, string> = {
   SINGLE_CHOICE: 'Single Choice',
@@ -18,6 +19,7 @@ export default function QuestionBankPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showBulk, setShowBulk] = useState(false)
   const [editing, setEditing] = useState<Question | null>(null)
 
   const { data, isLoading, isError } = useQuery({
@@ -56,11 +58,18 @@ export default function QuestionBankPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>Question bank</h1>
           <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>A considered library of reviewed assessment items.</p>
         </div>
-        <button onClick={openCreate}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white self-start"
-                style={{ background: '#007A62' }}>
-          <Plus className="w-4 h-4" /> Add question
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowBulk(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-colors hover:bg-green-50"
+                  style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(161 38% 13%)' }}>
+            <Upload className="w-4 h-4" /> Bulk upload
+          </button>
+          <button onClick={openCreate}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white self-start"
+                  style={{ background: '#007A62' }}>
+            <Plus className="w-4 h-4" /> Add question
+          </button>
+        </div>
       </div>
 
       <div className="n360-card overflow-hidden">
@@ -151,6 +160,12 @@ export default function QuestionBankPage() {
           question={editing}
           onClose={closeModal}
           onSaved={() => { qc.invalidateQueries({ queryKey: ['questions'] }); closeModal() }}
+        />
+      )}
+      {showBulk && (
+        <BulkUploadModal
+          onClose={() => setShowBulk(false)}
+          onImported={() => qc.invalidateQueries({ queryKey: ['questions'] })}
         />
       )}
     </DashboardLayout>

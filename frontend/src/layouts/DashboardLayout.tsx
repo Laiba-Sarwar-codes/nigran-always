@@ -7,7 +7,7 @@ import type { Role } from '@/types/auth'
 import {
   LayoutDashboard, FileText, Users, BarChart3, Settings, BookOpen,
   Radio, ClipboardList, TrendingUp, Calendar, User, ChevronRight,
-  Menu, Search, LogOut, ChevronDown,
+  Menu, Search, LogOut, ChevronDown, Activity, Heart,
 } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
@@ -24,6 +24,8 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: 'Examinations',   href: '/admin/exams',      icon: FileText },
     { label: 'People & access',href: '/admin/users',      icon: Users },
     { label: 'Activity',       href: '/admin/activity',   icon: BarChart3 },
+    { label: 'Analytics',      href: '/admin/analytics',  icon: TrendingUp },
+    { label: 'System health',  href: '/admin/health',     icon: Heart },
     { label: 'Settings',       href: '/admin/settings',   icon: Settings },
   ],
   EXAMINER: [
@@ -55,6 +57,8 @@ function pageTitle(pathname: string): string {
     '/admin/exams': 'Examinations',
     '/admin/users': 'People & access',
     '/admin/activity': 'Activity',
+    '/admin/analytics': 'Analytics',
+    '/admin/health': 'System health',
     '/admin/settings': 'Settings',
     '/examiner/dashboard': 'Overview',
     '/examiner/exams': 'Examinations',

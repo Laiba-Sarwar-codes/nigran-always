@@ -23,6 +23,9 @@ import CandidateResultsPage from '@/pages/CandidateResultsPage'
 import ExaminerReportsPage from '@/pages/ExaminerReportsPage'
 import CandidateProfilePage from '@/pages/CandidateProfilePage'
 import ExamRoomRedirectPage from '@/pages/ExamRoomRedirectPage'
+import AdminExamsPage from '@/pages/AdminExamsPage'
+import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage'
+import AdminHealthPage from '@/pages/AdminHealthPage'
 
 export default function App() {
   return (
@@ -41,15 +44,20 @@ export default function App() {
         <Route path="/admin/dashboard" element={
           <ProtectedRoute roles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>
         } />
-        {/* Admin examinations — redirect to user management or use same list */}
         <Route path="/admin/exams" element={
-          <ProtectedRoute roles={['ADMIN']}><ExaminationsPage /></ProtectedRoute>
+          <ProtectedRoute roles={['ADMIN']}><AdminExamsPage /></ProtectedRoute>
         } />
         <Route path="/admin/users" element={
           <ProtectedRoute roles={['ADMIN']}><UserManagementPage /></ProtectedRoute>
         } />
         <Route path="/admin/activity" element={
           <ProtectedRoute roles={['ADMIN']}><AdminActivityPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/analytics" element={
+          <ProtectedRoute roles={['ADMIN']}><AdminAnalyticsPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/health" element={
+          <ProtectedRoute roles={['ADMIN']}><AdminHealthPage /></ProtectedRoute>
         } />
         <Route path="/admin/settings" element={
           <ProtectedRoute roles={['ADMIN']}><AdminSettingsPage /></ProtectedRoute>

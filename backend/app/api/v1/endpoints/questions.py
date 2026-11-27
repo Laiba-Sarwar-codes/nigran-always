@@ -14,7 +14,10 @@ from app.schemas.exam import (
 )
 from app.services import exam as exam_svc
 
+from app.api.v1.endpoints.bulk_upload import router as _bulk_router
+
 router = APIRouter(prefix="/questions", tags=["questions"])
+router.include_router(_bulk_router)
 
 
 @router.get("", response_model=QuestionListResponse)

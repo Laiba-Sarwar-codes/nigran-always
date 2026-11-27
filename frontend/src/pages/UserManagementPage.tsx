@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { adminService } from '@/services/auth'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import type { User } from '@/types/auth'
-import { UserPlus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { UserPlus, Search, ChevronLeft, ChevronRight, Edit2, X } from 'lucide-react'
 
 const createUserSchema = z.object({
   full_name: z.string().min(2, 'Name too short'),
@@ -74,6 +74,68 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+const editUserSchema = z.object({
+  full_name: z.string().min(2, 'Name too short'),
+  email: z.string().email('Invalid email'),
+})
+type EditUserForm = z.infer<typeof editUserSchema>
+
+function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [error, setError] = useState('')
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<EditUserForm>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: { full_name: user.full_name, email: user.email },
+  })
+  const mutation = useMutation({
+    mutationFn: (data: EditUserForm) => adminService.patchUser(user.id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-users'] }); onClose() },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl border w-full max-w-md p-6 shadow-2xl" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold" style={{ color: 'hsl(161 38% 13%)' }}>Edit person</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="w-4 h-4" style={{ color: 'hsl(157 10% 44%)' }} />
+          </button>
+        </div>
+        {error && <div className="mb-4 p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">{error}</div>}
+        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'hsl(161 38% 13%)' }}>Full name</label>
+            <input {...register('full_name')} type="text"
+                   className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+                   style={{ borderColor: 'hsl(150 22% 86%)' }} />
+            {errors.full_name && <p className="text-xs text-red-600 mt-1">{errors.full_name.message}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'hsl(161 38% 13%)' }}>Email address</label>
+            <input {...register('email')} type="email"
+                   className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+                   style={{ borderColor: 'hsl(150 22% 86%)' }} />
+            {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <button type="button" onClick={onClose}
+                    className="px-4 py-2 text-sm border rounded-lg transition-colors"
+                    style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(161 38% 13%)' }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting}
+                    className="px-4 py-2 text-sm text-white rounded-lg disabled:opacity-50 transition-colors"
+                    style={{ background: '#007A62' }}>
+              {isSubmitting ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const roleBadge: Record<string, string> = {
   ADMIN: 'badge bg-purple-100 text-purple-700',
   EXAMINER: 'badge bg-blue-100 text-blue-700',
@@ -85,6 +147,7 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [editUser, setEditUser] = useState<User | null>(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -179,13 +242,18 @@ export default function UserManagementPage() {
                       {u.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="col-span-2 flex items-center justify-end">
+                  <div className="col-span-2 flex items-center justify-end gap-1">
+                    <button onClick={() => setEditUser(u)}
+                            className="p-1.5 rounded-lg border hover:bg-green-50 transition-colors"
+                            style={{ borderColor: 'hsl(150 22% 86%)' }}
+                            title="Edit">
+                      <Edit2 className="w-3.5 h-3.5" style={{ color: 'hsl(157 10% 44%)' }} />
+                    </button>
                     <button onClick={() => toggleStatus.mutate({ id: u.id, is_active: !u.is_active })}
                             className="text-xs px-2.5 py-1 rounded-lg border transition-colors hover:bg-green-50"
                             style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(157 10% 44%)' }}>
                       {u.is_active ? 'Deactivate' : 'Activate'}
                     </button>
-                    <MoreHorizontal className="w-4 h-4 ml-2" style={{ color: 'hsl(157 10% 44%)' }} />
                   </div>
                 </li>
               )
@@ -216,6 +284,7 @@ export default function UserManagementPage() {
       </div>
 
       {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} />}
+      {editUser && <EditUserModal user={editUser} onClose={() => setEditUser(null)} />}
     </DashboardLayout>
   )
 }

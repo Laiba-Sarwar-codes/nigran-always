@@ -6,7 +6,7 @@ from app.db.deps import get_db
 from app.core.deps import require_admin, require_examiner, require_candidate, get_current_user
 from app.models.user import User, Role, AuditLog
 from app.models.exam import Examination, ExamStatus, Question
-from app.models.candidate import Enrollment, Attempt, AttemptStatus, Result, ResultPublicationStatus, GradingStatus, Response
+from app.models.candidate import Enrollment, Attempt, AttemptStatus, Result, ResultPublicationStatus, ResultStatus, GradingStatus, Response
 from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -76,6 +76,59 @@ async def admin_activity(
 
 
 # ── Examiner ──────────────────────────────────────────────────────────────────
+
+@router.get("/admin/analytics")
+async def admin_analytics(
+    _: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.candidate import ResultStatus
+
+    admin_count = (await db.execute(select(func.count(User.id)).where(User.role == Role.ADMIN))).scalar_one()
+    examiner_count = (await db.execute(select(func.count(User.id)).where(User.role == Role.EXAMINER))).scalar_one()
+    candidate_count = (await db.execute(select(func.count(User.id)).where(User.role == Role.CANDIDATE))).scalar_one()
+
+    draft_exams = (await db.execute(select(func.count(Examination.id)).where(Examination.status == ExamStatus.DRAFT))).scalar_one()
+    published_exams = (await db.execute(select(func.count(Examination.id)).where(Examination.status == ExamStatus.PUBLISHED))).scalar_one()
+
+    total_attempts = (await db.execute(select(func.count(Attempt.id)))).scalar_one()
+    submitted_attempts = (await db.execute(select(func.count(Attempt.id)).where(Attempt.status == AttemptStatus.SUBMITTED))).scalar_one()
+    inprogress_attempts = (await db.execute(select(func.count(Attempt.id)).where(Attempt.status == AttemptStatus.IN_PROGRESS))).scalar_one()
+
+    published_results = (await db.execute(select(func.count(Result.id)).where(Result.publication_status == ResultPublicationStatus.PUBLISHED))).scalar_one()
+    pass_results = (await db.execute(select(func.count(Result.id)).where(Result.result_status == ResultStatus.PASS, Result.publication_status == ResultPublicationStatus.PUBLISHED))).scalar_one()
+    fail_results = (await db.execute(select(func.count(Result.id)).where(Result.result_status == ResultStatus.FAIL, Result.publication_status == ResultPublicationStatus.PUBLISHED))).scalar_one()
+
+    top_q = (
+        select(User.full_name, func.count(Examination.id).label("exam_count"))
+        .join(Examination, Examination.creator_id == User.id)
+        .where(User.role == Role.EXAMINER)
+        .group_by(User.id, User.full_name)
+        .order_by(func.count(Examination.id).desc())
+        .limit(5)
+    )
+    top_rows = (await db.execute(top_q)).all()
+    top_examiners = []
+    for full_name, exam_count in top_rows:
+        examiner_obj = (await db.execute(select(User).where(User.full_name == full_name, User.role == Role.EXAMINER))).scalars().first()
+        cand_count = 0
+        if examiner_obj:
+            from app.models.candidate import Enrollment
+            cand_count = (await db.execute(
+                select(func.count(Enrollment.id))
+                .join(Examination, Examination.id == Enrollment.examination_id)
+                .where(Examination.creator_id == examiner_obj.id)
+            )).scalar_one()
+        top_examiners.append({"examiner_name": full_name, "exam_count": exam_count, "candidate_count": cand_count})
+
+    return {
+        "user_by_role": {"admin": admin_count, "examiner": examiner_count, "candidate": candidate_count},
+        "exam_by_status": {"DRAFT": draft_exams, "PUBLISHED": published_exams},
+        "attempt_stats": {"total": total_attempts, "submitted": submitted_attempts, "in_progress": inprogress_attempts},
+        "result_stats": {"published": published_results, "pass": pass_results, "fail": fail_results},
+        "top_examiners": top_examiners,
+    }
+
 
 @router.get("/examiner/stats")
 async def examiner_stats(
@@ -161,6 +214,63 @@ async def examiner_recent_exams(
         for e in rows
     ]
     return {"items": items, "total": len(items)}
+
+
+@router.get("/examiner/analytics")
+async def examiner_analytics(
+    current_user: User = Depends(require_examiner),
+    db: AsyncSession = Depends(get_db),
+):
+    """Per-exam breakdown: enrollment, submission, pass/fail counts and avg score."""
+    from app.models.candidate import ResultStatus
+    exams = (await db.execute(
+        select(Examination)
+        .where(Examination.creator_id == current_user.id)
+        .order_by(Examination.updated_at.desc())
+    )).scalars().all()
+
+    items = []
+    for exam in exams:
+        enrolled = (await db.execute(
+            select(func.count(Enrollment.id)).where(Enrollment.examination_id == exam.id)
+        )).scalar_one()
+        submitted = (await db.execute(
+            select(func.count(Attempt.id)).where(
+                Attempt.examination_id == exam.id,
+                Attempt.status == AttemptStatus.SUBMITTED,
+            )
+        )).scalar_one()
+        passes = (await db.execute(
+            select(func.count(Result.id)).where(
+                Result.examination_id == exam.id,
+                Result.result_status == ResultStatus.PASS,
+                Result.publication_status == ResultPublicationStatus.PUBLISHED,
+            )
+        )).scalar_one()
+        fails = (await db.execute(
+            select(func.count(Result.id)).where(
+                Result.examination_id == exam.id,
+                Result.result_status == ResultStatus.FAIL,
+                Result.publication_status == ResultPublicationStatus.PUBLISHED,
+            )
+        )).scalar_one()
+        avg_pct = (await db.execute(
+            select(func.avg(Result.percentage)).where(
+                Result.examination_id == exam.id,
+                Result.publication_status == ResultPublicationStatus.PUBLISHED,
+            )
+        )).scalar_one()
+        items.append({
+            "id": exam.id,
+            "title": exam.title,
+            "status": exam.status.value,
+            "enrolled": enrolled,
+            "submitted": submitted,
+            "passes": passes,
+            "fails": fails,
+            "avg_percentage": round(float(avg_pct), 1) if avg_pct is not None else None,
+        })
+    return {"items": items}
 
 
 # ── Candidate ─────────────────────────────────────────────────────────────────

@@ -71,9 +71,9 @@ export default function ExaminerDashboardPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Exams assigned', value: String(stats?.total_examinations ?? 0).padStart(2, '0'), icon: FileText, sub: `${stats?.published_examinations ?? 0} live today` },
-          { label: 'Responses to review', value: String(stats?.draft_examinations ?? 0).padStart(2, '0'), icon: ClipboardList, sub: 'Awaiting grading' },
-          { label: 'Questions approved', value: String(stats?.total_questions ?? 0).padStart(2, '0'), icon: BookOpen, sub: 'In question bank' },
+          { label: 'Total examinations', value: String(stats?.total_examinations ?? 0).padStart(2, '0'), icon: FileText, sub: `${stats?.published_examinations ?? 0} published` },
+          { label: 'Responses to review', value: String(stats?.pending_grading ?? 0).padStart(2, '0'), icon: ClipboardList, sub: 'Awaiting manual grading' },
+          { label: 'Question bank', value: String(stats?.total_questions ?? 0).padStart(2, '0'), icon: BookOpen, sub: 'Approved questions' },
         ].map((k) => (
           <div key={k.label} className="n360-card p-5">
             <div className="flex items-center justify-between mb-3">
