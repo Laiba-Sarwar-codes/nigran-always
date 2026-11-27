@@ -65,6 +65,20 @@ async def seed():
             for email, name in demo_students:
                 c, _ = await get_or_create_user(session, email, name, Role.CANDIDATE, "Student@1234")
                 candidates.append(c)
+
+            # Also enroll any existing real candidate accounts (e.g. laibasarwar498@gmail.com)
+            existing_candidates_q = await session.execute(
+                select(User).where(
+                    User.role == Role.CANDIDATE,
+                    User.email.not_in([s[0] for s in demo_students]),
+                    User.email.not_like('%@nigrani.local'),
+                )
+            )
+            for real_user in existing_candidates_q.scalars().all():
+                if real_user not in candidates:
+                    candidates.append(real_user)
+                    print(f"  ADDED   existing candidate: {real_user.email}")
+
             await session.flush()
 
             print("\n── Questions ────────────────────────────")
@@ -156,7 +170,7 @@ async def seed():
             published_exams = [e for e in exams_to_enroll if e.status == ExamStatus.PUBLISHED]
             now = datetime.now(timezone.utc)
             for exam in published_exams:
-                for idx, candidate in enumerate(candidates[:3]):
+                for idx, candidate in enumerate(candidates):
                     existing = (await session.execute(
                         select(Enrollment).where(
                             Enrollment.examination_id == exam.id,
