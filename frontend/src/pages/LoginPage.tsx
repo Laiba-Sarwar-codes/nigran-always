@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { dashboardPathForRole } from '@/lib/roleRedirect'
 import { ClipboardCheck } from 'lucide-react'
 
 const schema = z.object({
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/dashboard'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? null
   const [error, setError] = useState('')
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -26,8 +27,8 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setError('')
     try {
-      await login(data)
-      navigate(from, { replace: true })
+      const me = await login(data)
+      navigate(from ?? dashboardPathForRole(me.role), { replace: true })
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Login failed')
     }

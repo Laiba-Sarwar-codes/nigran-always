@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { dashboardPathForRole } from '@/lib/roleRedirect'
 import type { Role } from '@/types/auth'
 
 interface Props {
@@ -24,7 +25,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={dashboardPathForRole(user.role)} replace />
   }
 
   return <>{children}</>

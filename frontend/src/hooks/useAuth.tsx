@@ -5,7 +5,7 @@ import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
 interface AuthContextValue {
   user: User | null
   loading: boolean
-  login: (data: LoginRequest) => Promise<void>
+  login: (data: LoginRequest) => Promise<User>
   register: (data: RegisterRequest) => Promise<User>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -30,10 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchMe().finally(() => setLoading(false))
   }, [fetchMe])
 
-  const login = useCallback(async (data: LoginRequest) => {
+  const login = useCallback(async (data: LoginRequest): Promise<User> => {
     await authService.login(data)
-    await fetchMe()
-  }, [fetchMe])
+    const me = await authService.me()
+    setUser(me)
+    return me
+  }, [])
 
   const register = useCallback(async (data: RegisterRequest) => {
     return authService.register(data)
