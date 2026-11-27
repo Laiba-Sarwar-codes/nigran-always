@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { getHealth } from '@/services/health'
 import {
   BookOpen,
@@ -78,7 +79,7 @@ export default function LandingPage() {
               About
             </a>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {health ? (
               <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
                 <CheckCircle2 className="w-3 h-3" />
@@ -90,6 +91,12 @@ export default function LandingPage() {
                 API Offline
               </span>
             ) : null}
+            <Link
+              to="/login"
+              className="text-sm font-medium text-foreground border border-border px-4 py-1.5 rounded-lg hover:bg-secondary transition-colors"
+            >
+              Sign in
+            </Link>
           </div>
         </div>
       </header>
@@ -98,7 +105,7 @@ export default function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 text-center">
         <div className="inline-flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 px-4 py-1.5 rounded-full mb-8">
           <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-          Phase 1 — Foundation
+          Phase 4 — Question Bank &amp; Examinations
         </div>
         <h1 className="text-5xl sm:text-6xl font-bold text-foreground leading-tight tracking-tight mb-6">
           The Examination Platform
@@ -110,12 +117,18 @@ export default function LandingPage() {
           authoring to result publication — with security and transparency at its core.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+          <Link
+            to="/register"
+            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
             Get Started
-          </button>
-          <button className="inline-flex items-center justify-center gap-2 border border-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-            Learn More
-          </button>
+          </Link>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center gap-2 border border-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
+          >
+            Sign In
+          </Link>
         </div>
       </section>
 

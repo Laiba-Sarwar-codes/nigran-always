@@ -1,9 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { dashboardPathForRole } from '@/lib/roleRedirect'
 import { ClipboardCheck } from 'lucide-react'
 
 const schema = z.object({
@@ -18,10 +19,14 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
-  const { register: registerUser } = useAuth()
+  const { register: registerUser, user, loading } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  if (!loading && user) {
+    return <Navigate to={dashboardPathForRole(user.role)} replace />
+  }
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
