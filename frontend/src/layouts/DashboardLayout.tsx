@@ -23,8 +23,8 @@ const navByRole: Record<Role, NavItem[]> = {
   ],
   EXAMINER: [
     { label: 'Dashboard', href: '/examiner/dashboard', icon: LayoutDashboard },
-    { label: 'My Examinations', href: '/examiner/examinations', icon: FileText, disabled: true },
-    { label: 'Question Bank', href: '/examiner/questions', icon: BookOpen, disabled: true },
+    { label: 'Examinations', href: '/examiner/exams', icon: FileText },
+    { label: 'Question Bank', href: '/examiner/questions', icon: BookOpen },
     { label: 'Results', href: '/examiner/results', icon: BarChart3, disabled: true },
   ],
   CANDIDATE: [

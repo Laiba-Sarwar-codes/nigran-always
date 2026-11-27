@@ -9,6 +9,9 @@ import ExaminerDashboardPage from '@/pages/ExaminerDashboardPage'
 import CandidateDashboardPage from '@/pages/CandidateDashboardPage'
 import UserManagementPage from '@/pages/UserManagementPage'
 import AdminActivityPage from '@/pages/AdminActivityPage'
+import QuestionBankPage from '@/pages/QuestionBankPage'
+import ExaminationsPage from '@/pages/ExaminationsPage'
+import ExamDetailPage from '@/pages/ExamDetailPage'
 
 export default function App() {
   return (
@@ -44,6 +47,15 @@ export default function App() {
         {/* Examiner */}
         <Route path="/examiner/dashboard" element={
           <ProtectedRoute roles={['EXAMINER']}><ExaminerDashboardPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/questions" element={
+          <ProtectedRoute roles={['EXAMINER']}><QuestionBankPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/exams" element={
+          <ProtectedRoute roles={['EXAMINER']}><ExaminationsPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/exams/:id" element={
+          <ProtectedRoute roles={['EXAMINER']}><ExamDetailPage /></ProtectedRoute>
         } />
 
         {/* Candidate */}

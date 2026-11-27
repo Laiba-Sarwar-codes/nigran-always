@@ -3,8 +3,8 @@ export interface AdminStats {
   candidates: number
   examiners: number
   active_users: number
-  total_examinations: number | null
-  published_examinations: number | null
+  total_examinations: number
+  published_examinations: number
 }
 
 export interface ActivityItem {
@@ -28,8 +28,8 @@ export interface ExaminerStats {
   total_examinations: number
   published_examinations: number
   draft_examinations: number
+  total_questions: number
   enrolled_candidates: number
-  completed_examinations: number
 }
 
 export interface CandidateSummary {

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.deps import get_db
 from app.core.deps import require_admin, require_examiner, require_candidate, get_current_user
 from app.models.user import User, Role, AuditLog
+from app.models.exam import Examination, ExamStatus, Question
 from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -29,13 +30,16 @@ async def admin_stats(
     examiners = (await db.execute(select(func.count(User.id)).where(User.role == Role.EXAMINER))).scalar_one()
     active = (await db.execute(select(func.count(User.id)).where(User.is_active.is_(True)))).scalar_one()
 
+    total_exams = (await db.execute(select(func.count(Examination.id)))).scalar_one()
+    published_exams = (await db.execute(select(func.count(Examination.id)).where(Examination.status == ExamStatus.PUBLISHED))).scalar_one()
+
     return {
         "total_users": total,
         "candidates": candidates,
         "examiners": examiners,
         "active_users": active,
-        "total_examinations": None,
-        "published_examinations": None,
+        "total_examinations": total_exams,
+        "published_examinations": published_exams,
     }
 
 
@@ -73,19 +77,61 @@ async def admin_activity(
 # ── Examiner ──────────────────────────────────────────────────────────────────
 
 @router.get("/examiner/stats")
-async def examiner_stats(_: User = Depends(require_examiner)):
+async def examiner_stats(
+    current_user: User = Depends(require_examiner),
+    db: AsyncSession = Depends(get_db),
+):
+    total_exams = (await db.execute(
+        select(func.count(Examination.id)).where(Examination.creator_id == current_user.id)
+    )).scalar_one()
+    published = (await db.execute(
+        select(func.count(Examination.id)).where(
+            Examination.creator_id == current_user.id,
+            Examination.status == ExamStatus.PUBLISHED,
+        )
+    )).scalar_one()
+    draft = (await db.execute(
+        select(func.count(Examination.id)).where(
+            Examination.creator_id == current_user.id,
+            Examination.status == ExamStatus.DRAFT,
+        )
+    )).scalar_one()
+    total_questions = (await db.execute(
+        select(func.count(Question.id)).where(Question.creator_id == current_user.id)
+    )).scalar_one()
+
     return {
-        "total_examinations": 0,
-        "published_examinations": 0,
-        "draft_examinations": 0,
+        "total_examinations": total_exams,
+        "published_examinations": published,
+        "draft_examinations": draft,
+        "total_questions": total_questions,
         "enrolled_candidates": 0,
-        "completed_examinations": 0,
     }
 
 
 @router.get("/examiner/recent-exams")
-async def examiner_recent_exams(_: User = Depends(require_examiner)):
-    return {"items": [], "total": 0}
+async def examiner_recent_exams(
+    current_user: User = Depends(require_examiner),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = (
+        select(Examination)
+        .where(Examination.creator_id == current_user.id)
+        .order_by(Examination.updated_at.desc())
+        .limit(5)
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+    items = [
+        {
+            "id": e.id,
+            "title": e.title,
+            "status": e.status.value,
+            "total_marks": e.total_marks,
+            "updated_at": e.updated_at.isoformat(),
+        }
+        for e in rows
+    ]
+    return {"items": items, "total": len(items)}
 
 
 # ── Candidate ─────────────────────────────────────────────────────────────────
