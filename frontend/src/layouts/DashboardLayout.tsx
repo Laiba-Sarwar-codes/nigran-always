@@ -29,7 +29,7 @@ const navByRole: Record<Role, NavItem[]> = {
   ],
   CANDIDATE: [
     { label: 'Dashboard', href: '/candidate/dashboard', icon: LayoutDashboard },
-    { label: 'My Examinations', href: '/candidate/examinations', icon: FileText, disabled: true },
+    { label: 'My Exams', href: '/candidate/exams', icon: FileText },
     { label: 'Results', href: '/candidate/results', icon: BarChart3, disabled: true },
   ],
 }

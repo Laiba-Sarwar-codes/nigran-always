@@ -6,6 +6,7 @@ from app.db.deps import get_db
 from app.core.deps import require_admin, require_examiner, require_candidate, get_current_user
 from app.models.user import User, Role, AuditLog
 from app.models.exam import Examination, ExamStatus, Question
+from app.models.candidate import Enrollment
 from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -100,12 +101,18 @@ async def examiner_stats(
         select(func.count(Question.id)).where(Question.creator_id == current_user.id)
     )).scalar_one()
 
+    enrolled_candidates = (await db.execute(
+        select(func.count(Enrollment.id))
+        .join(Examination, Examination.id == Enrollment.examination_id)
+        .where(Examination.creator_id == current_user.id)
+    )).scalar_one()
+
     return {
         "total_examinations": total_exams,
         "published_examinations": published,
         "draft_examinations": draft,
         "total_questions": total_questions,
-        "enrolled_candidates": 0,
+        "enrolled_candidates": enrolled_candidates,
     }
 
 
@@ -137,18 +144,60 @@ async def examiner_recent_exams(
 # ── Candidate ─────────────────────────────────────────────────────────────────
 
 @router.get("/candidate/summary")
-async def candidate_summary(_: User = Depends(require_candidate)):
+async def candidate_summary(
+    current_user: User = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.candidate import Attempt, AttemptStatus
+    assigned = (await db.execute(
+        select(func.count(Enrollment.id)).where(Enrollment.candidate_id == current_user.id)
+    )).scalar_one()
+    completed = (await db.execute(
+        select(func.count(Attempt.id)).where(
+            Attempt.candidate_id == current_user.id,
+            Attempt.status == AttemptStatus.SUBMITTED,
+        )
+    )).scalar_one()
+    in_progress = (await db.execute(
+        select(func.count(Attempt.id)).where(
+            Attempt.candidate_id == current_user.id,
+            Attempt.status == AttemptStatus.IN_PROGRESS,
+        )
+    )).scalar_one()
     return {
-        "assigned_examinations": 0,
-        "upcoming_examinations": 0,
-        "completed_examinations": 0,
+        "assigned_examinations": assigned,
+        "upcoming_examinations": max(0, assigned - completed - in_progress),
+        "completed_examinations": completed,
+        "in_progress_examinations": in_progress,
         "published_results": 0,
     }
 
 
 @router.get("/candidate/recent-exams")
-async def candidate_recent_exams(_: User = Depends(require_candidate)):
-    return {"items": [], "total": 0}
+async def candidate_recent_exams(
+    current_user: User = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.candidate import Attempt, AttemptStatus
+    from sqlalchemy.orm import selectinload
+    enrollments = (await db.execute(
+        select(Enrollment)
+        .where(Enrollment.candidate_id == current_user.id)
+        .options(selectinload(Enrollment.examination), selectinload(Enrollment.attempt))
+        .order_by(Enrollment.enrolled_at.desc())
+        .limit(5)
+    )).scalars().all()
+    items = []
+    for e in enrollments:
+        exam = e.examination
+        attempt = e.attempt
+        items.append({
+            "id": exam.id,
+            "title": exam.title,
+            "status": attempt.status.value if attempt else "NOT_STARTED",
+            "enrolled_at": e.enrolled_at.isoformat(),
+        })
+    return {"items": items, "total": len(items)}
 
 
 @router.get("/candidate/results")

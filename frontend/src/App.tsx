@@ -12,6 +12,8 @@ import AdminActivityPage from '@/pages/AdminActivityPage'
 import QuestionBankPage from '@/pages/QuestionBankPage'
 import ExaminationsPage from '@/pages/ExaminationsPage'
 import ExamDetailPage from '@/pages/ExamDetailPage'
+import CandidateExamsPage from '@/pages/CandidateExamsPage'
+import ExamWorkspacePage from '@/pages/ExamWorkspacePage'
 
 export default function App() {
   return (
@@ -61,6 +63,12 @@ export default function App() {
         {/* Candidate */}
         <Route path="/candidate/dashboard" element={
           <ProtectedRoute roles={['CANDIDATE']}><CandidateDashboardPage /></ProtectedRoute>
+        } />
+        <Route path="/candidate/exams" element={
+          <ProtectedRoute roles={['CANDIDATE']}><CandidateExamsPage /></ProtectedRoute>
+        } />
+        <Route path="/candidate/exam/:examId" element={
+          <ProtectedRoute roles={['CANDIDATE']}><ExamWorkspacePage /></ProtectedRoute>
         } />
 
         <Route path="*" element={<Navigate to="/" replace />} />

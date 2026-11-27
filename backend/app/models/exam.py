@@ -113,6 +113,7 @@ class Examination(Base):
     )
 
     creator = relationship("User", back_populates="examinations")
+    enrollments = relationship("Enrollment", back_populates="examination", cascade="all, delete-orphan")
     exam_questions: Mapped[list["ExamQuestion"]] = relationship(
         "ExamQuestion",
         back_populates="examination",

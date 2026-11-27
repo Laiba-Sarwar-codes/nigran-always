@@ -30,6 +30,8 @@ class User(Base):
     refresh_sessions: Mapped[list["RefreshSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     questions = relationship("Question", back_populates="creator", cascade="all, delete-orphan")
     examinations = relationship("Examination", back_populates="creator", cascade="all, delete-orphan")
+    enrollments = relationship("Enrollment", foreign_keys="Enrollment.candidate_id", back_populates="candidate", cascade="all, delete-orphan")
+    attempts = relationship("Attempt", foreign_keys="Attempt.candidate_id", cascade="all, delete-orphan")
 
 
 class RefreshSession(Base):
