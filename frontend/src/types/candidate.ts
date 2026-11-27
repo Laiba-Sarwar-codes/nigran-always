@@ -60,7 +60,14 @@ export interface SaveResponseResult {
   selected_choice_ids: number[]
   written_text: string | null
   is_marked_for_review: boolean
+  version: number
   saved_at: string
+}
+
+export interface AttemptStatusResponse {
+  attempt_id: number
+  status: AttemptStatus
+  submitted_at: string | null
 }
 
 export interface SubmitResult {

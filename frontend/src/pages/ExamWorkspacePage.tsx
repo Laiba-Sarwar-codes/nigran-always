@@ -6,7 +6,7 @@ import { candidateService } from '../services/candidate'
 import ExamTimer from '../components/exam/ExamTimer'
 import QuestionPalette from '../components/exam/QuestionPalette'
 import SubmitConfirmDialog from '../components/exam/SubmitConfirmDialog'
-import type { AttemptDetail, ResponseData } from '../types/candidate'
+import type { AttemptDetail, ResponseData, SaveResponseResult } from '../types/candidate'
 
 function countAnswered(questions: AttemptDetail['questions'], responses: Record<number, ResponseData>) {
   return questions.filter(q => {
@@ -77,8 +77,8 @@ export default function ExamWorkspacePage() {
     },
   })
 
-  const flagMutation = useMutation({
-    mutationFn: ({ aqId, marked }: { aqId: number; marked: boolean }) =>
+  const flagMutation = useMutation<SaveResponseResult, Error, { aqId: number; marked: boolean }>({
+    mutationFn: ({ aqId, marked }) =>
       candidateService.toggleReviewFlag(attemptId!, aqId, marked),
     onSuccess: (result) => {
       setLocalResponses(prev => ({
@@ -141,7 +141,6 @@ export default function ExamWorkspacePage() {
   if (!currentQ) return null
 
   const currentResp = localResponses[currentQ.id]
-  const isAnswered = (currentResp?.selected_choice_ids?.length ?? 0) > 0 || !!currentResp?.written_text
   const isFlagged = currentResp?.is_marked_for_review ?? false
 
   function handleChoiceToggle(choiceId: number, single: boolean) {

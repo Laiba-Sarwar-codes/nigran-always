@@ -12,7 +12,7 @@ export const dashboardService = {
     apiClient.get<ExaminerStats>('/dashboard/examiner/stats').then((r) => r.data),
 
   examinerRecentExams: () =>
-    apiClient.get<{ items: unknown[]; total: number }>('/dashboard/examiner/recent-exams').then((r) => r.data),
+    apiClient.get<{ items: { id: number; title: string; status: string; total_marks: number; updated_at: string }[]; total: number }>('/dashboard/examiner/recent-exams').then((r) => r.data),
 
   candidateSummary: () =>
     apiClient.get<CandidateSummary>('/dashboard/candidate/summary').then((r) => r.data),

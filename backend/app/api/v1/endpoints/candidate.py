@@ -9,6 +9,7 @@ from app.schemas.candidate import (
     EnrolledExamResponse,
     AttemptStartResponse,
     AttemptDetailResponse,
+    AttemptStatusResponse,
     SaveResponseRequest,
     SaveResponseResult,
     ReviewFlagRequest,
@@ -142,6 +143,7 @@ async def save_response(
         selected_choice_ids=resp.selected_choice_ids or [],
         written_text=resp.written_text,
         is_marked_for_review=resp.is_marked_for_review,
+        version=resp.version,
         saved_at=resp.saved_at,
     )
 
@@ -166,7 +168,33 @@ async def toggle_review_flag(
         selected_choice_ids=resp.selected_choice_ids or [],
         written_text=resp.written_text,
         is_marked_for_review=resp.is_marked_for_review,
+        version=resp.version,
         saved_at=resp.saved_at,
+    )
+
+
+@router.get(
+    "/attempts/{attempt_id}/status",
+    response_model=AttemptStatusResponse,
+)
+async def get_attempt_status(
+    attempt_id: int,
+    current_user: User = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lightweight status check — safe to call after uncertain submission response."""
+    from sqlalchemy import select as sa_select
+    from app.models.candidate import Attempt
+    result = await db.execute(
+        sa_select(Attempt).where(Attempt.id == attempt_id, Attempt.candidate_id == current_user.id)
+    )
+    attempt = result.scalar_one_or_none()
+    if not attempt:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attempt not found.")
+    return AttemptStatusResponse(
+        attempt_id=attempt.id,
+        status=attempt.status,
+        submitted_at=attempt.submitted_at,
     )
 
 

@@ -330,18 +330,23 @@ async def save_response(
         await db.commit()
         raise ValueError("Examination deadline has passed.")
 
-    # Verify question belongs to attempt
+    # Verify question belongs to attempt and validate choice IDs
     aq_result = await db.execute(
-        select(AttemptQuestion).where(
-            AttemptQuestion.id == aq_id,
-            AttemptQuestion.attempt_id == attempt_id,
-        )
+        select(AttemptQuestion)
+        .where(AttemptQuestion.id == aq_id, AttemptQuestion.attempt_id == attempt_id)
+        .options(selectinload(AttemptQuestion.choice_snapshots))
     )
     aq = aq_result.scalar_one_or_none()
     if not aq:
         raise ValueError("Question not found in this attempt.")
 
-    # Upsert response
+    if data.selected_choice_ids:
+        valid_ids = {cs.id for cs in aq.choice_snapshots}
+        invalid = [cid for cid in data.selected_choice_ids if cid not in valid_ids]
+        if invalid:
+            raise ValueError(f"Invalid choice IDs: {invalid}")
+
+    # Upsert response with version increment and optional OCC
     resp_result = await db.execute(
         select(Response).where(
             Response.attempt_id == attempt_id,
@@ -355,11 +360,16 @@ async def save_response(
             attempt_question_id=aq_id,
             selected_choice_ids=data.selected_choice_ids,
             written_text=data.written_text,
+            version=1,
         )
         db.add(resp)
     else:
+        # Optimistic concurrency: if client sends a version and it doesn't match, reject
+        if data.client_version is not None and data.client_version != resp.version:
+            raise ValueError(f"Version conflict: expected {resp.version}, got {data.client_version}")
         resp.selected_choice_ids = data.selected_choice_ids
         resp.written_text = data.written_text
+        resp.version = resp.version + 1
 
     await db.commit()
     await db.refresh(resp)

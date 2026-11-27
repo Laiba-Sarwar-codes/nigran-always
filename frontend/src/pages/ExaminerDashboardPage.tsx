@@ -6,7 +6,7 @@ import EmptyState from '@/components/common/EmptyState'
 import LoadingState from '@/components/common/LoadingState'
 import ErrorState from '@/components/common/ErrorState'
 import { dashboardService } from '@/services/dashboard'
-import { FileText, BookOpen, Users, CheckSquare, Clock, Plus } from 'lucide-react'
+import { FileText, BookOpen, CheckSquare, Clock, Plus } from 'lucide-react'
 
 const STATUS_COLORS = {
   DRAFT: 'bg-amber-100 text-amber-700',
@@ -95,7 +95,7 @@ export default function ExaminerDashboardPage() {
             />
           ) : (
             <div className="divide-y divide-border">
-              {recentExams?.items.map((e: { id: number; title: string; status: string; total_marks: number; updated_at: string }) => (
+              {recentExams?.items.map((e) => (
                 <div
                   key={e.id}
                   onClick={() => navigate(`/examiner/exams/${e.id}`)}

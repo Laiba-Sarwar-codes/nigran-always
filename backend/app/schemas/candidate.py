@@ -93,6 +93,7 @@ class AttemptStartResponse(BaseModel):
 class SaveResponseRequest(BaseModel):
     selected_choice_ids: list[int] = Field(default_factory=list)
     written_text: str | None = None
+    client_version: int | None = Field(default=None, description="Current known version for OCC; omit to skip check")
 
 
 class ReviewFlagRequest(BaseModel):
@@ -104,7 +105,14 @@ class SaveResponseResult(BaseModel):
     selected_choice_ids: list[int]
     written_text: str | None
     is_marked_for_review: bool
+    version: int
     saved_at: datetime
+
+
+class AttemptStatusResponse(BaseModel):
+    attempt_id: int
+    status: AttemptStatus
+    submitted_at: datetime | None
 
 
 # ── Submission ────────────────────────────────────────────────────────────────

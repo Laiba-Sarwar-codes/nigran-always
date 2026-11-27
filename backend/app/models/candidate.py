@@ -144,6 +144,7 @@ class Response(Base):
     selected_choice_ids: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     written_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_marked_for_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
     saved_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

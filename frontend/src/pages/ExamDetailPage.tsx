@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Rocket, Plus, Trash2, BookOpen, Award, Clock } from 'lucide-react'
+import { ArrowLeft, Rocket, Plus, Trash2, BookOpen, Award, Clock, UserPlus } from 'lucide-react'
 import { examsService } from '@/services/exam'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import LoadingState from '@/components/common/LoadingState'
 import ErrorState from '@/components/common/ErrorState'
 import AddQuestionsModal from '@/components/exam/AddQuestionsModal'
+import EnrollCandidateModal from '@/components/exam/EnrollCandidateModal'
 
 const TYPE_COLORS = {
   SINGLE_CHOICE: 'bg-blue-100 text-blue-700',
@@ -26,6 +27,7 @@ export default function ExamDetailPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [showAddQ, setShowAddQ] = useState(false)
+  const [showEnroll, setShowEnroll] = useState(false)
 
   const { data: exam, isLoading, isError } = useQuery({
     queryKey: ['exam', examId],
@@ -89,24 +91,35 @@ export default function ExamDetailPage() {
             </div>
           </div>
 
-          {isDraft && (
-            <button
-              onClick={() => {
-                if (exam.exam_questions.length === 0) {
-                  alert('Add at least one question before publishing.')
-                  return
-                }
-                if (confirm('Publish this examination? This cannot be undone.')) {
-                  publishMut.mutate()
-                }
-              }}
-              disabled={publishMut.isPending}
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-            >
-              <Rocket className="w-4 h-4" />
-              {publishMut.isPending ? 'Publishing…' : 'Publish'}
-            </button>
-          )}
+          <div className="flex gap-2">
+            {!isDraft && (
+              <button
+                onClick={() => setShowEnroll(true)}
+                className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                Enroll Candidate
+              </button>
+            )}
+            {isDraft && (
+              <button
+                onClick={() => {
+                  if (exam.exam_questions.length === 0) {
+                    alert('Add at least one question before publishing.')
+                    return
+                  }
+                  if (confirm('Publish this examination? This cannot be undone.')) {
+                    publishMut.mutate()
+                  }
+                }}
+                disabled={publishMut.isPending}
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                <Rocket className="w-4 h-4" />
+                {publishMut.isPending ? 'Publishing…' : 'Publish'}
+              </button>
+            )}
+          </div>
         </div>
 
         {publishMut.isError && (
@@ -196,6 +209,9 @@ export default function ExamDetailPage() {
             setShowAddQ(false)
           }}
         />
+      )}
+      {showEnroll && (
+        <EnrollCandidateModal examId={examId} onClose={() => setShowEnroll(false)} />
       )}
     </DashboardLayout>
   )

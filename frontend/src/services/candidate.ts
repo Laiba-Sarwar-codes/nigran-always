@@ -1,13 +1,19 @@
-import api from './api'
+import axios from 'axios'
 import type {
   EnrolledExam,
   AttemptStartResponse,
   AttemptDetail,
+  AttemptStatusResponse,
   SaveResponseResult,
   SubmitResult,
   EnrollRequest,
   EnrollmentResponse,
-} from '../types/candidate'
+} from '@/types/candidate'
+
+const api = axios.create({
+  baseURL: '/api/v1',
+  withCredentials: true,
+})
 
 export const candidateService = {
   listMyExams: () => api.get<EnrolledExam[]>('/candidate/my-exams').then(r => r.data),
@@ -21,10 +27,13 @@ export const candidateService = {
   getAttempt: (attemptId: number) =>
     api.get<AttemptDetail>(`/candidate/attempts/${attemptId}`).then(r => r.data),
 
+  getAttemptStatus: (attemptId: number) =>
+    api.get<AttemptStatusResponse>(`/candidate/attempts/${attemptId}/status`).then(r => r.data),
+
   saveResponse: (
     attemptId: number,
     aqId: number,
-    data: { selected_choice_ids: number[]; written_text?: string | null },
+    data: { selected_choice_ids: number[]; written_text?: string | null; client_version?: number },
   ) =>
     api
       .put<SaveResponseResult>(`/candidate/attempts/${attemptId}/questions/${aqId}/response`, data)
