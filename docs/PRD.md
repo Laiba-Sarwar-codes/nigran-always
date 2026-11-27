@@ -1,3 +1,4 @@
+git status
 # NIGRANI ALWAYS — PRODUCT REQUIREMENTS DOCUMENT
 
 ## 1. Product Overview
