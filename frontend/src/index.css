@@ -4,19 +4,36 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Deep navy primary — institutional, trustworthy */
+    --background: 0 0% 98%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 219 60% 38%;
+
+    /* Primary: deep navy blue */
+    --primary: 219 60% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: soft cool-gray surface */
+    --secondary: 220 20% 95%;
+    --secondary-foreground: 220 25% 20%;
+
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 12% 46%;
+
+    --accent: 219 60% 38%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Status */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --danger: 0 72% 51%;
+
     --radius: 0.5rem;
   }
 
@@ -25,7 +42,33 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Smooth focus rings */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Consistent scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Status badge helpers */
+  .badge-draft   { @apply bg-amber-100  text-amber-800  border border-amber-200; }
+  .badge-pub     { @apply bg-emerald-100 text-emerald-800 border border-emerald-200; }
+  .badge-pending { @apply bg-yellow-100 text-yellow-800 border border-yellow-200; }
+  .badge-graded  { @apply bg-blue-100   text-blue-800   border border-blue-200; }
+  .badge-pass    { @apply bg-emerald-100 text-emerald-800 border border-emerald-200; }
+  .badge-fail    { @apply bg-red-100    text-red-800    border border-red-200; }
+
+  /* Exam workspace overlay */
+  .workspace-bg { background: hsl(220 25% 97%); }
 }

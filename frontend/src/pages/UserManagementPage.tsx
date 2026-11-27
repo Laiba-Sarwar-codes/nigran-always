@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { adminService } from '@/services/auth'
-import AppLayout from '@/layouts/AppLayout'
+import DashboardLayout from '@/layouts/DashboardLayout'
 import type { User } from '@/types/auth'
 import { UserPlus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -105,7 +105,7 @@ export default function UserManagementPage() {
   const totalPages = data ? Math.ceil(data.total / data.page_size) : 1
 
   return (
-    <AppLayout>
+    <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Users</h1>
@@ -203,6 +203,6 @@ export default function UserManagementPage() {
       </div>
 
       {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} />}
-    </AppLayout>
+    </DashboardLayout>
   )
 }

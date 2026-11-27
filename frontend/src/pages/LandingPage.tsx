@@ -15,39 +15,39 @@ import {
 const features = [
   {
     icon: ClipboardCheck,
-    title: 'Smart Examination',
+    title: 'Full Examination Lifecycle',
     description:
-      'Create, schedule, and deliver examinations with precision. Adaptive formats for every discipline.',
+      'Create, publish, and deliver examinations end to end — from draft to result publication.',
   },
   {
     icon: Shield,
-    title: 'Secure & Proctored',
+    title: 'Submission Integrity',
     description:
-      'Academic integrity built into every session. Tamper-proof submissions and audit trails.',
+      'Server-side deadlines, optimistic concurrency control, and immutable attempt snapshots.',
   },
   {
     icon: BarChart3,
-    title: 'Deep Analytics',
+    title: 'Automated & Manual Grading',
     description:
-      'Instant performance insights for students and faculty. Track progress over time.',
+      'Instant auto-grading for MCQs. Manual evaluation workflow for written responses.',
   },
   {
     icon: Users,
-    title: 'Multi-Role Access',
+    title: 'Three-Role Access',
     description:
-      'Seamless workflows for administrators, faculty, and students in one unified platform.',
+      'Dedicated experiences for Administrators, Examiners, and Candidates — each with strict role enforcement.',
   },
   {
     icon: Clock,
-    title: 'Real-Time Monitoring',
+    title: 'Reliable Autosave',
     description:
-      'Live dashboards during active examinations. Intervention tools for invigilators.',
+      'Answers save automatically with offline queuing and seamless reconnection recovery.',
   },
   {
     icon: BookOpen,
     title: 'Question Bank',
     description:
-      'Manage thousands of questions across subjects. Version control and difficulty tagging.',
+      'Single-choice, multiple-select, and written-response question types with reusable question management.',
   },
 ]
 
@@ -105,7 +105,7 @@ export default function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 text-center">
         <div className="inline-flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 px-4 py-1.5 rounded-full mb-8">
           <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-          Phase 4 — Question Bank &amp; Examinations
+          Secure · Reliable · Transparent
         </div>
         <h1 className="text-5xl sm:text-6xl font-bold text-foreground leading-tight tracking-tight mb-6">
           The Examination Platform
