@@ -7,13 +7,13 @@ import type { EnrolledExam, AttemptStatus } from '../types/candidate'
 function statusBadge(status: AttemptStatus) {
   switch (status) {
     case 'NOT_STARTED':
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Not Started</span>
+      return <span className="badge badge-upcoming">Not Started</span>
     case 'IN_PROGRESS':
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">In Progress</span>
+      return <span className="badge badge-live">In Progress</span>
     case 'SUBMITTED':
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Submitted</span>
+      return <span className="badge badge-active">Submitted</span>
     case 'EXPIRED':
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Expired</span>
+      return <span className="badge badge-draft">Expired</span>
   }
 }
 
@@ -22,30 +22,30 @@ function ExamCard({ exam }: { exam: EnrolledExam }) {
   const canResume = exam.attempt_status === 'IN_PROGRESS'
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+    <div className="n360-card p-5">
       <div className="flex items-start justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 text-lg leading-tight">{exam.title}</h3>
+        <h3 className="font-semibold text-sm leading-tight" style={{ color: 'hsl(161 38% 13%)' }}>{exam.title}</h3>
         {statusBadge(exam.attempt_status)}
       </div>
 
       {exam.description && (
-        <p className="text-gray-500 text-sm mb-3 line-clamp-2">{exam.description}</p>
+        <p className="text-sm mb-3 line-clamp-2" style={{ color: 'hsl(157 10% 44%)' }}>{exam.description}</p>
       )}
 
-      <div className="flex gap-4 text-sm text-gray-500 mb-4">
+      <div className="flex gap-4 text-xs mb-4" style={{ color: 'hsl(157 10% 44%)' }}>
         {exam.duration_minutes && (
           <span className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
+            <Clock className="h-3.5 w-3.5" />
             {exam.duration_minutes} min
           </span>
         )}
         <span className="flex items-center gap-1">
-          <FileText className="h-4 w-4" />
+          <FileText className="h-3.5 w-3.5" />
           {exam.total_marks} marks
         </span>
         {exam.passing_marks && (
           <span className="flex items-center gap-1">
-            <CheckCircle className="h-4 w-4" />
+            <CheckCircle className="h-3.5 w-3.5" />
             Pass: {exam.passing_marks}
           </span>
         )}
@@ -54,10 +54,11 @@ function ExamCard({ exam }: { exam: EnrolledExam }) {
       {(canStart || canResume) && (
         <Link
           to={`/candidate/exam/${exam.id}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
+          style={{ background: '#007A62' }}
         >
           <Play className="h-4 w-4" />
-          {canStart ? 'Start Exam' : 'Resume Exam'}
+          {canStart ? 'Start exam' : 'Resume exam'}
         </Link>
       )}
     </div>
@@ -85,17 +86,17 @@ export default function CandidateExamsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Examinations</h1>
-        <p className="text-gray-500 mt-1">Examinations you have been enrolled in.</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>Upcoming examinations</h1>
+        <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>Examinations you have been enrolled in.</p>
       </div>
 
       {!exams?.length ? (
-        <div className="text-center py-20 text-gray-400">
-          <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p className="font-medium">No examinations yet</p>
-          <p className="text-sm">Your examiner will enroll you when examinations are ready.</p>
+        <div className="n360-card py-20 text-center">
+          <FileText className="h-10 w-10 mx-auto mb-3" style={{ color: 'hsl(157 10% 44%)', opacity: 0.4 }} />
+          <p className="font-medium text-sm" style={{ color: 'hsl(161 38% 13%)' }}>No examinations yet</p>
+          <p className="text-xs mt-1" style={{ color: 'hsl(157 10% 44%)' }}>Your examiner will enroll you when examinations are ready.</p>
         </div>
       ) : (
         <div className="grid gap-4">

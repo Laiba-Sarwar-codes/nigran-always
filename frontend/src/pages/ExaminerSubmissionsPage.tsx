@@ -12,39 +12,47 @@ export default function ExaminerSubmissionsPage() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#007A62' }} />
     </div>
   )
 
   const exams = data?.items ?? []
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Users className="h-6 w-6 text-indigo-600" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Submissions</h1>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>Grading queue</h1>
+        <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>Select an examination to view and grade responses.</p>
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Select an examination to view and grade submissions.</p>
 
-      {!exams.length ? (
-        <div className="text-center py-16 text-gray-500 dark:text-gray-400">No published examinations yet.</div>
-      ) : (
-        <div className="space-y-2">
-          {exams.map(e => (
-            <button
-              key={e.id}
-              onClick={() => navigate(`/examiner/exams/${e.id}/submissions`)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors text-left"
-            >
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">{e.title}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{e.total_marks} marks · {e.duration_minutes} min</div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="n360-card overflow-hidden">
+        {!exams.length ? (
+          <div className="py-16 text-center">
+            <Users className="h-8 w-8 mx-auto mb-3" style={{ color: 'hsl(157 10% 44%)', opacity: 0.4 }} />
+            <p className="text-sm" style={{ color: 'hsl(157 10% 44%)' }}>No published examinations yet.</p>
+          </div>
+        ) : (
+          <ul className="divide-y" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+            {exams.map(e => (
+              <li key={e.id}>
+                <button
+                  onClick={() => navigate(`/examiner/exams/${e.id}/submissions`)}
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-green-50/50 transition-colors text-left"
+                >
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'hsl(161 38% 13%)' }}>{e.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'hsl(157 10% 44%)' }}>{e.total_marks} marks · {e.duration_minutes} min</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="badge badge-live">Live</span>
+                    <ChevronRight className="h-4 w-4" style={{ color: 'hsl(157 10% 44%)' }} />
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }

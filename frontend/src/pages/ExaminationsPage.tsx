@@ -1,28 +1,40 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, ChevronRight, Trash2, BookOpen, Clock, Award, ClipboardList } from 'lucide-react'
+import { Plus, Trash2, BookOpen, Clock, Award, ChevronRight } from 'lucide-react'
 import { examsService } from '@/services/exam'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import LoadingState from '@/components/common/LoadingState'
 import ErrorState from '@/components/common/ErrorState'
-import EmptyState from '@/components/common/EmptyState'
 import CreateExamModal from '@/components/exam/CreateExamModal'
+import { useAuth } from '@/hooks/useAuth'
 
-const STATUS_COLORS = {
-  DRAFT: 'bg-amber-100 text-amber-700',
-  PUBLISHED: 'bg-green-100 text-green-700',
+const TABS = ['All examinations', 'Live', 'Upcoming', 'Draft'] as const
+type Tab = typeof TABS[number]
+
+function statusClass(status: string) {
+  if (status === 'PUBLISHED') return 'badge badge-live'
+  if (status === 'DRAFT') return 'badge badge-draft'
+  return 'badge badge-upcoming'
+}
+function statusLabel(status: string) {
+  if (status === 'PUBLISHED') return 'Live'
+  if (status === 'DRAFT') return 'Draft'
+  return status
 }
 
 export default function ExaminationsPage() {
+  const { user } = useAuth()
   const qc = useQueryClient()
   const navigate = useNavigate()
+const isAdmin = user?.role === 'ADMIN'
   const [showCreate, setShowCreate] = useState(false)
+  const [tab, setTab] = useState<Tab>('All examinations')
   const [page, setPage] = useState(1)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['exams', page],
-    queryFn: () => examsService.list({ page, per_page: 15 }),
+    queryFn: () => examsService.list({ page, per_page: 20 }),
   })
 
   const deleteMut = useMutation({
@@ -30,114 +42,136 @@ export default function ExaminationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['exams'] }),
   })
 
+  const examPath = (id: number) =>
+    isAdmin ? `/admin/exams/${id}` : `/examiner/exams/${id}`
+
+  const filtered = (data?.items ?? []).filter(e => {
+    if (tab === 'Live') return e.status === 'PUBLISHED'
+    if (tab === 'Draft') return e.status === 'DRAFT'
+    if (tab === 'Upcoming') return e.status !== 'PUBLISHED' && e.status !== 'DRAFT'
+    return true
+  })
+
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Examinations</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {data ? `${data.total} examination${data.total !== 1 ? 's' : ''}` : 'Loading…'}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>Examinations</h1>
+          <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>Plan, monitor, and review every assessment.</p>
+        </div>
+        {!isAdmin && (
+          <button onClick={() => setShowCreate(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white self-start"
+                  style={{ background: '#007A62' }}>
             <Plus className="w-4 h-4" />
-            New Exam
+            New examination
           </button>
+        )}
+      </div>
+
+      {/* Tab bar + table card */}
+      <div className="n360-card overflow-hidden">
+        {/* Tabs */}
+        <div className="flex items-center gap-1 px-4 pt-3 border-b" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+                    className="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors -mb-px border-b-2"
+                    style={{
+                      color: tab === t ? '#007A62' : 'hsl(157 10% 44%)',
+                      borderBottomColor: tab === t ? '#007A62' : 'transparent',
+                    }}>
+              {t}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-2 pb-2">
+            {!isAdmin && (
+              <button onClick={() => setShowCreate(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
+                      style={{ background: '#007A62' }}>
+                <Plus className="w-3.5 h-3.5" /> New examination
+              </button>
+            )}
+          </div>
         </div>
 
-        {isLoading && <LoadingState />}
-        {isError && <ErrorState message="Failed to load examinations." />}
+        {isLoading && <div className="p-10"><LoadingState /></div>}
+        {isError && <div className="p-10"><ErrorState /></div>}
 
-        {data && data.items.length === 0 && (
-          <EmptyState
-            icon={ClipboardList}
-            title="No examinations yet"
-            description="Create your first examination to get started."
-            action={{ label: 'New Exam', onClick: () => setShowCreate(true) }}
-          />
-        )}
+        {!isLoading && !isError && (
+          <>
+            {/* Table header */}
+            <div className="grid grid-cols-12 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b"
+                 style={{ color: 'hsl(157 10% 44%)', borderColor: 'hsl(150 22% 86%)' }}>
+              <span className="col-span-5">Examination</span>
+              <span className="col-span-3">Questions / Marks</span>
+              <span className="col-span-2">Duration</span>
+              <span className="col-span-2">Status</span>
+            </div>
 
-        {data && data.items.length > 0 && (
-          <div className="space-y-3">
-            {data.items.map(exam => (
-              <div
-                key={exam.id}
-                className="bg-white border border-border rounded-xl p-4 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => navigate(`/examiner/exams/${exam.id}`)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[exam.status]}`}>
-                        {exam.status}
-                      </span>
-                    </div>
-                    <h3 className="font-medium text-foreground truncate">{exam.title}</h3>
-                    {exam.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{exam.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" />
-                        {exam.exam_questions.length} question{exam.exam_questions.length !== 1 ? 's' : ''}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Award className="w-3 h-3" />
-                        {exam.total_marks} marks
-                      </span>
-                      {exam.duration_minutes && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {exam.duration_minutes} min
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {exam.status === 'DRAFT' && (
-                      <button
-                        onClick={e => {
-                          e.stopPropagation()
-                          if (confirm('Delete this examination?')) deleteMut.mutate(exam.id)
-                        }}
-                        className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                </div>
+            {filtered.length === 0 && (
+              <div className="py-16 text-center text-sm" style={{ color: 'hsl(157 10% 44%)' }}>
+                No examinations in this category
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {data && data.pages > 1 && (
-          <div className="flex justify-center gap-2 mt-5">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="px-3 py-1.5 border border-input rounded-lg text-sm disabled:opacity-40 hover:bg-secondary transition-colors"
-            >
-              Previous
-            </button>
-            <span className="px-3 py-1.5 text-sm text-muted-foreground">
-              {page} / {data.pages}
-            </span>
-            <button
-              disabled={page === data.pages}
-              onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1.5 border border-input rounded-lg text-sm disabled:opacity-40 hover:bg-secondary transition-colors"
-            >
-              Next
-            </button>
-          </div>
+            <ul className="divide-y" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+              {filtered.map(exam => (
+                <li key={exam.id}
+                    onClick={() => navigate(examPath(exam.id))}
+                    className="grid grid-cols-12 items-center px-5 py-4 cursor-pointer hover:bg-green-50/50 transition-colors group">
+                  <div className="col-span-5 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: 'hsl(161 38% 13%)' }}>{exam.title}</p>
+                    {exam.description && (
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'hsl(157 10% 44%)' }}>{exam.description}</p>
+                    )}
+                  </div>
+                  <div className="col-span-3 flex items-center gap-3 text-sm" style={{ color: 'hsl(157 10% 44%)' }}>
+                    <span className="flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> {exam.exam_questions.length}q
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Award className="w-3 h-3" /> {exam.total_marks}m
+                    </span>
+                  </div>
+                  <div className="col-span-2 text-sm flex items-center gap-1" style={{ color: 'hsl(157 10% 44%)' }}>
+                    <Clock className="w-3 h-3" />
+                    {exam.duration_minutes ? `${exam.duration_minutes} min` : '—'}
+                  </div>
+                  <div className="col-span-2 flex items-center justify-between">
+                    <span className={statusClass(exam.status)}>{statusLabel(exam.status)}</span>
+                    <div className="flex items-center gap-1">
+                      {exam.status === 'DRAFT' && !isAdmin && (
+                        <button onClick={e => { e.stopPropagation(); if (confirm('Delete?')) deleteMut.mutate(exam.id) }}
+                                className="p-1 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                title="Delete">
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </button>
+                      )}
+                      <ChevronRight className="w-4 h-4" style={{ color: 'hsl(157 10% 44%)' }} />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Footer */}
+            <div className="px-5 py-3 border-t flex items-center justify-between text-xs"
+                 style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(157 10% 44%)' }}>
+              <span>Showing {filtered.length} examination{filtered.length !== 1 ? 's' : ''}</span>
+              {data && data.pages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
+                          className="px-2.5 py-1 rounded border disabled:opacity-40 transition-colors hover:bg-green-50"
+                          style={{ borderColor: 'hsl(150 22% 86%)' }}>Prev</button>
+                  <span>{page} / {data.pages}</span>
+                  <button disabled={page === data.pages} onClick={() => setPage(p => p + 1)}
+                          className="px-2.5 py-1 rounded border disabled:opacity-40 transition-colors hover:bg-green-50"
+                          style={{ borderColor: 'hsl(150 22% 86%)' }}>Next</button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 

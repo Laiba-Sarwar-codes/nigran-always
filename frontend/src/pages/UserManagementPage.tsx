@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { adminService } from '@/services/auth'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import type { User } from '@/types/auth'
-import { UserPlus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { UserPlus, Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 
 const createUserSchema = z.object({
   full_name: z.string().min(2, 'Name too short'),
@@ -23,48 +23,49 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
     resolver: zodResolver(createUserSchema),
     defaultValues: { role: 'EXAMINER' },
   })
-
   const mutation = useMutation({
     mutationFn: (data: CreateUserForm) => adminService.createUser(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-users'] })
-      onClose()
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-users'] }); onClose() },
     onError: (e: Error) => setError(e.message),
   })
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl border border-border w-full max-w-md p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Create user</h2>
-        {error && <div className="mb-3 p-2 rounded bg-red-50 text-sm text-red-700 border border-red-200">{error}</div>}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl border w-full max-w-md p-6 shadow-2xl" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+        <h2 className="text-base font-semibold mb-5" style={{ color: 'hsl(161 38% 13%)' }}>Invite person</h2>
+        {error && <div className="mb-4 p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">{error}</div>}
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
+          {[
+            { id: 'full_name', label: 'Full name', type: 'text', reg: register('full_name'), err: errors.full_name },
+            { id: 'email', label: 'Email address', type: 'email', reg: register('email'), err: errors.email },
+            { id: 'password', label: 'Password', type: 'password', reg: register('password'), err: errors.password },
+          ].map(f => (
+            <div key={f.id}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'hsl(161 38% 13%)' }}>{f.label}</label>
+              <input {...f.reg} type={f.type}
+                     className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+                     style={{ borderColor: 'hsl(150 22% 86%)' }} />
+              {f.err && <p className="text-xs text-red-600 mt-1">{f.err.message}</p>}
+            </div>
+          ))}
           <div>
-            <label className="block text-sm font-medium mb-1">Full name</label>
-            <input {...register('full_name')} className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            {errors.full_name && <p className="text-xs text-red-600 mt-1">{errors.full_name.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input {...register('email')} type="email" className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input {...register('password')} type="password" className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Role</label>
-            <select {...register('role')} className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'hsl(161 38% 13%)' }}>Role</label>
+            <select {...register('role')} className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
+                    style={{ borderColor: 'hsl(150 22% 86%)' }}>
               <option value="EXAMINER">Examiner</option>
               <option value="CANDIDATE">Candidate</option>
             </select>
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-secondary transition-colors">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">
-              {isSubmitting ? 'Creating…' : 'Create'}
+            <button type="button" onClick={onClose}
+                    className="px-4 py-2 text-sm border rounded-lg transition-colors"
+                    style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(161 38% 13%)' }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting}
+                    className="px-4 py-2 text-sm text-white rounded-lg disabled:opacity-50 transition-colors"
+                    style={{ background: '#007A62' }}>
+              {isSubmitting ? 'Sending…' : 'Invite'}
             </button>
           </div>
         </form>
@@ -74,9 +75,9 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
 }
 
 const roleBadge: Record<string, string> = {
-  ADMIN: 'bg-purple-100 text-purple-700',
-  EXAMINER: 'bg-blue-100 text-blue-700',
-  CANDIDATE: 'bg-green-100 text-green-700',
+  ADMIN: 'badge bg-purple-100 text-purple-700',
+  EXAMINER: 'badge bg-blue-100 text-blue-700',
+  CANDIDATE: 'badge badge-active',
 }
 
 export default function UserManagementPage() {
@@ -88,17 +89,11 @@ export default function UserManagementPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search, roleFilter],
-    queryFn: () => adminService.listUsers({
-      page,
-      page_size: 20,
-      search: search || undefined,
-      role: roleFilter || undefined,
-    }),
+    queryFn: () => adminService.listUsers({ page, page_size: 20, search: search || undefined, role: roleFilter || undefined }),
   })
 
   const toggleStatus = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      adminService.setStatus(id, is_active),
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) => adminService.setStatus(id, is_active),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
   })
 
@@ -106,100 +101,118 @@ export default function UserManagementPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Users</h1>
-          {data && <p className="text-sm text-muted-foreground mt-1">{data.total} total</p>}
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>People & access</h1>
+          <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>Keep the right people in the right workspaces.</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
+        <button onClick={() => setShowCreate(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white self-start"
+                style={{ background: '#007A62' }}>
           <UserPlus className="w-4 h-4" />
-          Create user
+          Invite people
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-border">
-        <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              placeholder="Search by name or email…"
-              className="w-full pl-9 pr-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+      {/* Table card */}
+      <div className="n360-card overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 border-b flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between"
+             style={{ borderColor: 'hsl(150 22% 86%)' }}>
+          <p className="text-sm font-medium" style={{ color: 'hsl(161 38% 13%)' }}>
+            <span className="font-bold">{data?.total ?? '—'}</span>
+            <span style={{ color: 'hsl(157 10% 44%)' }}> people in this workspace</span>
+          </p>
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'hsl(157 10% 44%)' }} />
+              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                     placeholder="Search by name or email…"
+                     className="pl-8 pr-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-1"
+                     style={{ borderColor: 'hsl(150 22% 86%)' }} />
+            </div>
+            <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }}
+                    className="px-3 py-1.5 border rounded-lg text-xs focus:outline-none"
+                    style={{ borderColor: 'hsl(150 22% 86%)' }}>
+              <option value="">All roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="EXAMINER">Examiner</option>
+              <option value="CANDIDATE">Candidate</option>
+            </select>
           </div>
-          <select
-            value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">All roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="EXAMINER">Examiner</option>
-            <option value="CANDIDATE">Candidate</option>
-          </select>
+        </div>
+
+        {/* Table */}
+        <div className="grid grid-cols-12 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b"
+             style={{ color: 'hsl(157 10% 44%)', borderColor: 'hsl(150 22% 86%)' }}>
+          <span className="col-span-5">Person</span>
+          <span className="col-span-3">Role</span>
+          <span className="col-span-2">Access</span>
+          <span className="col-span-2" />
         </div>
 
         {isLoading ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">Loading…</div>
+          <div className="py-12 text-center text-sm" style={{ color: 'hsl(157 10% 44%)' }}>Loading…</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Name</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Email</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Role</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Status</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.items.map((user: User) => (
-                  <tr key={user.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">{user.full_name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${roleBadge[user.role] ?? ''}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleStatus.mutate({ id: user.id, is_active: !user.is_active })}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        {user.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="divide-y" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+            {data?.items.map((u: User) => {
+              const initials = u.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+              return (
+                <li key={u.id}
+                    className="grid grid-cols-12 items-center px-5 py-3 hover:bg-green-50/50 transition-colors">
+                  <div className="col-span-5 flex items-center gap-3 min-w-0">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white"
+                         style={{ background: '#007A62' }}>
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'hsl(161 38% 13%)' }}>{u.full_name}</p>
+                      <p className="text-xs truncate" style={{ color: 'hsl(157 10% 44%)' }}>{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="col-span-3">
+                    <span className={roleBadge[u.role] ?? 'badge'}>{u.role.charAt(0) + u.role.slice(1).toLowerCase()}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className={u.is_active ? 'badge badge-active' : 'badge badge-draft'}>
+                      {u.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="col-span-2 flex items-center justify-end">
+                    <button onClick={() => toggleStatus.mutate({ id: u.id, is_active: !u.is_active })}
+                            className="text-xs px-2.5 py-1 rounded-lg border transition-colors hover:bg-green-50"
+                            style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(157 10% 44%)' }}>
+                      {u.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <MoreHorizontal className="w-4 h-4 ml-2" style={{ color: 'hsl(157 10% 44%)' }} />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
 
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-border flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded border border-border disabled:opacity-40 hover:bg-secondary transition-colors">
+        {/* Footer */}
+        <div className="px-5 py-3 border-t flex items-center justify-between text-xs"
+             style={{ borderColor: 'hsl(150 22% 86%)', color: 'hsl(157 10% 44%)' }}>
+          <span>{data?.total ?? 0} records</span>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
+                      className="p-1 rounded border disabled:opacity-40 hover:bg-green-50 transition-colors"
+                      style={{ borderColor: 'hsl(150 22% 86%)' }}>
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 rounded border border-border disabled:opacity-40 hover:bg-secondary transition-colors">
+              <span>Page {page} of {totalPages}</span>
+              <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}
+                      className="p-1 rounded border disabled:opacity-40 hover:bg-green-50 transition-colors"
+                      style={{ borderColor: 'hsl(150 22% 86%)' }}>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} />}

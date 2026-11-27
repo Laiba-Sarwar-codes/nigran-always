@@ -1,155 +1,151 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import DashboardLayout from '@/layouts/DashboardLayout'
-import StatCard from '@/components/ui/StatCard'
-import LoadingState from '@/components/common/LoadingState'
-import ErrorState from '@/components/common/ErrorState'
 import { dashboardService } from '@/services/dashboard'
-import { Users, UserCheck, GraduationCap, Activity, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { Users, GraduationCap, UserCheck, Activity, FileText, ArrowRight } from 'lucide-react'
 import type { ActivityItem } from '@/types/dashboard'
 
-function ActionBadge({ action }: { action: string }) {
-  const map: Record<string, string> = {
-    register: 'bg-green-100 text-green-700',
-    login: 'bg-blue-100 text-blue-700',
-    admin_create_user: 'bg-purple-100 text-purple-700',
-    admin_patch_user: 'bg-amber-100 text-amber-700',
-    admin_set_active: 'bg-teal-100 text-teal-700',
-    admin_deactivate: 'bg-red-100 text-red-700',
-  }
-  return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${map[action] ?? 'bg-secondary text-muted-foreground'}`}>
-      {action.replace(/_/g, ' ')}
-    </span>
-  )
-}
-
-function ActivityLog() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-activity', page],
-    queryFn: () => dashboardService.adminActivity(page),
-  })
-
-  if (isLoading) return <LoadingState message="Loading activity…" />
-  if (isError) return <ErrorState retry={refetch} />
-
-  const totalPages = Math.ceil((data?.total ?? 0) / (data?.page_size ?? 20))
-
-  return (
-    <div className="bg-white rounded-xl border border-border overflow-hidden">
-      <div className="px-5 py-4 border-b border-border">
-        <h3 className="font-semibold text-foreground text-sm">Recent Activity</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{data?.total ?? 0} total events</p>
-      </div>
-      {data?.items.length === 0 ? (
-        <div className="py-12 text-center text-sm text-muted-foreground">No activity yet</div>
-      ) : (
-        <div className="divide-y divide-border">
-          {data?.items.map((item: ActivityItem) => (
-            <div key={item.id} className="px-5 py-3 flex items-start gap-3 hover:bg-secondary/20 transition-colors">
-              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Activity className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <ActionBadge action={item.action} />
-                  {item.resource_type && (
-                    <span className="text-xs text-muted-foreground">{item.resource_type}</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {item.actor_name ?? 'System'} · {new Date(item.created_at).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {totalPages > 1 && (
-        <div className="px-5 py-3 border-t border-border flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Page {page} of {totalPages}</p>
-          <div className="flex gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="p-1 rounded border border-border disabled:opacity-40 hover:bg-secondary transition-colors">
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-              className="p-1 rounded border border-border disabled:opacity-40 hover:bg-secondary transition-colors">
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
 }
 
 export default function AdminDashboardPage() {
-  const { data: stats, isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-stats'],
-    queryFn: dashboardService.adminStats,
-  })
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { data: stats } = useQuery({ queryKey: ['admin-stats'], queryFn: dashboardService.adminStats })
+  const { data: activity } = useQuery({ queryKey: ['admin-activity', 1], queryFn: () => dashboardService.adminActivity(1, 5) })
+
+  const firstName = user?.full_name?.split(' ')[0] ?? 'Admin'
+
+  const kpis = [
+    { label: 'Total users',    value: String(stats?.total_users ?? 0).padStart(2, '0'),    icon: Users,         sub: 'Registered accounts' },
+    { label: 'Candidates',     value: String(stats?.candidates ?? 0).padStart(2, '0'),       icon: GraduationCap, sub: 'Active candidates' },
+    { label: 'Examiners',      value: String(stats?.examiners ?? 0).padStart(2, '0'),        icon: UserCheck,     sub: 'Assigned examiners' },
+    { label: 'Active users',   value: String(stats?.active_users ?? 0).padStart(2, '0'),     icon: Activity,      sub: 'Currently enabled' },
+  ]
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      {/* Page heading */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Platform overview and user management</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>
+            {greeting()}, {firstName}.
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'hsl(157 10% 44%)' }}>A measured view of the work ahead.</p>
         </div>
+        <button onClick={() => navigate('/admin/users')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white self-start"
+                style={{ background: '#007A62' }}>
+          + Invite people
+        </button>
+      </div>
 
-        {isLoading ? (
-          <LoadingState message="Loading stats…" />
-        ) : isError ? (
-          <ErrorState retry={refetch} />
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Users" value={stats?.total_users ?? 0} icon={Users} color="blue" />
-            <StatCard title="Candidates" value={stats?.candidates ?? 0} icon={GraduationCap} color="green" />
-            <StatCard title="Examiners" value={stats?.examiners ?? 0} icon={UserCheck} color="purple" />
-            <StatCard title="Active Users" value={stats?.active_users ?? 0} icon={Activity} color="amber" />
-          </div>
-        )}
-
-        {/* Examinations stat (Phase 4+) */}
-        <div className="p-4 bg-white rounded-xl border border-border border-dashed">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
-              <FileText className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Examinations</p>
-              <p className="text-xs text-muted-foreground">Available from Phase 4</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick links */}
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Link to="/admin/users"
-            className="flex items-center gap-3 p-4 bg-white rounded-xl border border-border hover:border-primary/30 hover:shadow-sm transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <Users className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">User Management</p>
-              <p className="text-xs text-muted-foreground">Create, search and manage accounts</p>
-            </div>
+      {/* Hero banner */}
+      <div className="n360-card p-6 mb-6 relative overflow-hidden">
+        <div className="relative z-10 max-w-sm">
+          <p className="text-[9px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#007A62' }}>
+            ● Nigran 360 · Workspace
+          </p>
+          <h2 className="text-xl font-bold leading-snug mb-2" style={{ color: 'hsl(161 38% 13%)' }}>
+            Every assessment, in one clear view.
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'hsl(157 10% 44%)' }}>
+            A thoughtful overview for the people who keep every examination moving.
+          </p>
+          <Link to="/admin/exams"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                style={{ background: '#007A62' }}>
+            Review examinations <ArrowRight className="w-3.5 h-3.5" />
           </Link>
-          <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-border opacity-50 cursor-not-allowed">
-            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
-              <FileText className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 flex items-center justify-center">
+          <div className="w-48 h-48 rounded-full border-4" style={{ borderColor: '#007A62' }} />
+        </div>
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {kpis.map((k) => (
+          <div key={k.label} className="n360-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs" style={{ color: 'hsl(157 10% 44%)' }}>{k.label}</p>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'hsl(155 24% 94%)' }}>
+                <k.icon className="w-3.5 h-3.5" style={{ color: '#007A62' }} />
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Examinations</p>
-              <p className="text-xs text-muted-foreground">Coming in Phase 4</p>
-            </div>
+            <p className="text-3xl font-bold" style={{ color: 'hsl(161 38% 13%)' }}>{k.value}</p>
+            <p className="text-xs mt-1" style={{ color: 'hsl(157 10% 44%)' }}>{k.sub}</p>
           </div>
+        ))}
+      </div>
+
+      {/* Bottom row: quick actions + recent activity */}
+      <div className="grid lg:grid-cols-5 gap-5">
+        {/* Quick actions */}
+        <div className="lg:col-span-2 space-y-3">
+          <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(161 38% 13%)' }}>Quick actions</h3>
+          {[
+            { label: 'People & access', desc: 'Manage users and roles', href: '/admin/users', icon: Users },
+            { label: 'Examinations', desc: 'Review all examinations', href: '/admin/exams', icon: FileText },
+            { label: 'Platform activity', desc: 'Audit log and history', href: '/admin/activity', icon: Activity },
+          ].map((a) => (
+            <Link key={a.href} to={a.href}
+                  className="flex items-center gap-3 p-3.5 n360-card hover:border-green-200 transition-all group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                   style={{ background: 'hsl(155 24% 94%)' }}>
+                <a.icon className="w-4 h-4" style={{ color: '#007A62' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: 'hsl(161 38% 13%)' }}>{a.label}</p>
+                <p className="text-xs" style={{ color: 'hsl(157 10% 44%)' }}>{a.desc}</p>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#007A62' }} />
+            </Link>
+          ))}
         </div>
 
-        <ActivityLog />
+        {/* Recent activity */}
+        <div className="lg:col-span-3 n360-card overflow-hidden">
+          <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'hsl(157 10% 44%)' }}>Audit trail</p>
+              <h3 className="text-sm font-semibold mt-0.5" style={{ color: 'hsl(161 38% 13%)' }}>Recent changes</h3>
+            </div>
+            <Link to="/admin/activity" className="text-xs font-medium flex items-center gap-1" style={{ color: '#007A62' }}>
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          {(activity?.items ?? []).length === 0 ? (
+            <div className="py-10 text-center text-sm" style={{ color: 'hsl(157 10% 44%)' }}>No activity yet</div>
+          ) : (
+            <ul className="divide-y" style={{ borderColor: 'hsl(150 22% 86%)' }}>
+              {activity?.items.map((item: ActivityItem) => (
+                <li key={item.id} className="px-5 py-3 flex items-center gap-3 hover:bg-green-50/50 transition-colors">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                       style={{ background: 'hsl(155 24% 94%)' }}>
+                    <Activity className="w-3.5 h-3.5" style={{ color: '#007A62' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(161 38% 13%)' }}>
+                      {item.action.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-xs" style={{ color: 'hsl(157 10% 44%)' }}>
+                      {item.actor_name ?? 'System'}
+                    </p>
+                  </div>
+                  <span className="text-xs flex-shrink-0" style={{ color: 'hsl(157 10% 44%)' }}>
+                    {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   )

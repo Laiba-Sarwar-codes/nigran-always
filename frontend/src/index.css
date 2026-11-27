@@ -2,73 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Deep navy primary — institutional, trustworthy */
-    --background: 0 0% 98%;
-    --foreground: 220 25% 10%;
+/* ─── Nigran 360 Design Tokens ─────────────────────────────────────────────── */
+:root {
+  /* Sidebar / brand */
+  --sidebar-bg:        #102923;
+  --sidebar-fg:        #d1e8df;
+  --sidebar-muted:     #7ba898;
+  --sidebar-active-bg: #1e3d34;
+  --sidebar-hover-bg:  #172e28;
+  --sidebar-border:    #1e3d34;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+  /* Content surface */
+  --background:        157 38% 96%;   /* #EDF6F1 mint */
+  --surface:           0 0% 100%;     /* white cards */
+  --foreground:        161 38% 13%;   /* #142D28 */
+  --muted-foreground:  157 10% 44%;   /* #647A71 */
 
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 219 60% 38%;
+  /* Brand green */
+  --primary:           163 100% 24%;  /* #007A62 */
+  --primary-foreground:0 0% 100%;
 
-    /* Primary: deep navy blue */
-    --primary: 219 60% 38%;
-    --primary-foreground: 0 0% 100%;
+  /* Neutrals */
+  --secondary:         155 24% 94%;   /* #EDF6F1 lighter */
+  --secondary-foreground: 161 38% 13%;
+  --muted:             155 20% 92%;
+  --border:            150 22% 86%;   /* #D5E5DC */
+  --input:             150 22% 86%;
+  --ring:              163 100% 24%;
+  --radius:            0.5rem;
 
-    /* Secondary: soft cool-gray surface */
-    --secondary: 220 20% 95%;
-    --secondary-foreground: 220 25% 20%;
+  /* Status */
+  --success:           145 60% 36%;
+  --warning:           22 90% 60%;
+  --danger:            0 72% 51%;
+  --info:              185 60% 40%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 12% 46%;
-
-    --accent: 219 60% 38%;
-    --accent-foreground: 0 0% 100%;
-
-    /* Status */
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
-    --danger: 0 72% 51%;
-
-    --radius: 0.5rem;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  /* Smooth focus rings */
-  :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-
-  /* Consistent scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+  /* Topbar */
+  --topbar-bg:         0 0% 100%;
+  --topbar-border:     150 22% 88%;
 }
 
-@layer utilities {
-  .text-balance { text-wrap: balance; }
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
 
-  /* Status badge helpers */
-  .badge-draft   { @apply bg-amber-100  text-amber-800  border border-amber-200; }
-  .badge-pub     { @apply bg-emerald-100 text-emerald-800 border border-emerald-200; }
-  .badge-pending { @apply bg-yellow-100 text-yellow-800 border border-yellow-200; }
-  .badge-graded  { @apply bg-blue-100   text-blue-800   border border-blue-200; }
-  .badge-pass    { @apply bg-emerald-100 text-emerald-800 border border-emerald-200; }
-  .badge-fail    { @apply bg-red-100    text-red-800    border border-red-200; }
-
-  /* Exam workspace overlay */
-  .workspace-bg { background: hsl(220 25% 97%); }
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+/* ─── Focus ──────────────────────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* ─── Status Badges ──────────────────────────────────────────────────────────── */
+.badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium; }
+.badge-live    { @apply bg-emerald-100 text-emerald-800; }
+.badge-upcoming{ @apply bg-orange-100 text-orange-700; }
+.badge-draft   { @apply bg-gray-100 text-gray-600; }
+.badge-pass    { @apply bg-emerald-100 text-emerald-700; }
+.badge-fail    { @apply bg-red-100 text-red-700; }
+.badge-active  { @apply bg-emerald-100 text-emerald-700; }
+.badge-pending { @apply bg-amber-100 text-amber-700; }
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────────── */
+.sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+}
+
+/* ─── Nigran 360 Card ────────────────────────────────────────────────────────── */
+.n360-card {
+  @apply bg-white rounded-xl border;
+  border-color: hsl(var(--border));
+}
+
+/* ─── Table ──────────────────────────────────────────────────────────────────── */
+.n360-table { @apply w-full text-sm; }
+.n360-table thead tr {
+  @apply border-b;
+  border-color: hsl(var(--border));
+}
+.n360-table thead th {
+  @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wide;
+  color: hsl(var(--muted-foreground));
+}
+.n360-table tbody tr {
+  @apply border-b last:border-0 transition-colors;
+  border-color: hsl(var(--border));
+}
+.n360-table tbody tr:hover { background: hsl(var(--secondary)); }
+.n360-table tbody td { @apply px-4 py-3; }
