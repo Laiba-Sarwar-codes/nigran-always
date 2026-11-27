@@ -1,10 +1,18 @@
 import enum
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, Enum, DateTime, ForeignKey, Text
+from sqlalchemy import String, Boolean, Enum, DateTime, ForeignKey, Text, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.engine import Base
+
+
+class NotificationType(str, enum.Enum):
+    EXAM_ASSIGNED = "EXAM_ASSIGNED"
+    EXAM_SUBMITTED = "EXAM_SUBMITTED"
+    RESULT_PUBLISHED = "RESULT_PUBLISHED"
+    GRADING_PENDING = "GRADING_PENDING"
+    GENERAL = "GENERAL"
 
 
 class Role(str, enum.Enum):
@@ -28,6 +36,7 @@ class User(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     refresh_sessions: Mapped[list["RefreshSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    notifications: Mapped[list["Notification"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     questions = relationship("Question", back_populates="creator", cascade="all, delete-orphan")
     examinations = relationship("Examination", back_populates="creator", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", foreign_keys="Enrollment.candidate_id", back_populates="candidate", cascade="all, delete-orphan")
@@ -45,6 +54,27 @@ class RefreshSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="refresh_sessions")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    __table_args__ = (
+        Index("ix_notifications_user_id_created_at", "user_id", "created_at"),
+        Index("ix_notifications_user_id_is_read", "user_id", "is_read"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    notification_type: Mapped[NotificationType] = mapped_column(Enum(NotificationType), nullable=False, default=NotificationType.GENERAL)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    related_entity_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    related_entity_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="notifications")
 
 
 class AuditLog(Base):

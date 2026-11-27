@@ -14,8 +14,9 @@ from app.models.candidate import (
     Response,
 )
 from app.models.exam import Examination, ExamQuestion, ExamStatus, Question
-from app.models.user import User, Role
+from app.models.user import User, Role, NotificationType
 from app.schemas.candidate import SaveResponseRequest
+from app.services.notifications import create_notification, audit
 
 
 # ── Enrollment ────────────────────────────────────────────────────────────────
@@ -54,6 +55,16 @@ async def enroll_candidate(
 
     enrollment = Enrollment(examination_id=exam_id, candidate_id=candidate_id)
     db.add(enrollment)
+    await db.flush()
+    await create_notification(
+        db, candidate.id,
+        title=f"Exam assigned: {exam.title}",
+        message=f"You have been enrolled in '{exam.title}'. Good luck!",
+        notification_type=NotificationType.EXAM_ASSIGNED,
+        related_entity_id=str(exam_id),
+        related_entity_type="examination",
+    )
+    await audit(db, examiner.id, "ENROLL_CANDIDATE", "enrollment", str(enrollment.id))
     await db.commit()
     await db.refresh(enrollment)
     return enrollment
@@ -443,6 +454,24 @@ async def submit_attempt(db: AsyncSession, candidate: User, attempt_id: int) -> 
     now = datetime.now(timezone.utc)
     attempt.status = AttemptStatus.SUBMITTED
     attempt.submitted_at = now
+    await db.flush()
+
+    # Notify examiner
+    exam_res = await db.execute(
+        select(Examination).where(Examination.id == attempt.examination_id)
+    )
+    exam = exam_res.scalar_one_or_none()
+    if exam:
+        await create_notification(
+            db, exam.creator_id,
+            title="New submission ready",
+            message=f"{candidate.full_name} submitted '{exam.title}'. Grade when ready.",
+            notification_type=NotificationType.EXAM_SUBMITTED,
+            related_entity_id=str(attempt.id),
+            related_entity_type="attempt",
+        )
+        await audit(db, candidate.id, "SUBMIT_ATTEMPT", "attempt", str(attempt.id))
+
     await db.commit()
     await db.refresh(attempt)
 

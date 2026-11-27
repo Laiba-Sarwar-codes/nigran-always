@@ -12,7 +12,8 @@ from app.models.candidate import (
     GradingStatus, ResultStatus, ResultPublicationStatus,
 )
 from app.models.exam import Examination
-from app.models.user import User, Role
+from app.models.user import User, Role, NotificationType
+from app.services.notifications import create_notification, audit
 
 
 # ── Auto-grading ──────────────────────────────────────────────────────────────
@@ -424,6 +425,18 @@ async def publish_result(db: AsyncSession, examiner: User, attempt_id: int) -> R
     result_row.publication_status = ResultPublicationStatus.PUBLISHED
     result_row.published_at = datetime.now(timezone.utc)
     result_row.published_by_id = examiner.id
+    await db.flush()
+
+    # Notify candidate
+    await create_notification(
+        db, attempt.candidate_id,
+        title="Your result is available",
+        message=f"Your result for '{exam.title}' has been published. View it now.",
+        notification_type=NotificationType.RESULT_PUBLISHED,
+        related_entity_id=str(result_row.id),
+        related_entity_type="result",
+    )
+    await audit(db, examiner.id, "PUBLISH_RESULT", "result", str(result_row.id))
 
     await db.commit()
     await db.refresh(result_row)

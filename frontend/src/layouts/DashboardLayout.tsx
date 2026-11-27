@@ -6,6 +6,7 @@ import {
   ClipboardCheck, LayoutDashboard, Users, BookOpen,
   FileText, BarChart3, LogOut, Menu, X, User,
 } from 'lucide-react'
+import NotificationBell from '@/components/notifications/NotificationBell'
 
 interface NavItem {
   label: string
@@ -54,7 +55,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
           <ClipboardCheck className="w-4 h-4 text-white" />
         </div>
-        <span className="font-semibold text-sm text-foreground">Nigrani Always</span>
+        <span className="font-semibold text-sm text-foreground flex-1">Nigrani Always</span>
+        <NotificationBell />
       </div>
 
       {/* Nav */}
@@ -145,11 +147,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <span className="font-semibold text-sm">Nigrani Always</span>
           </div>
-          {sidebarOpen && (
-            <button onClick={() => setSidebarOpen(false)} className="ml-auto text-muted-foreground">
-              <X className="w-5 h-5" />
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
+            {sidebarOpen && (
+              <button onClick={() => setSidebarOpen(false)} className="text-muted-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
