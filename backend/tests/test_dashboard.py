@@ -130,9 +130,9 @@ async def test_candidate_summary_works(client: AsyncClient):
 
 async def test_candidate_results_empty(client: AsyncClient):
     await _register_login(client, "cand_res@test.com")
-    r = await client.get("/api/v1/dashboard/candidate/results")
+    r = await client.get("/api/v1/dashboard/candidate/results-summary")
     assert r.status_code == 200
-    assert r.json()["items"] == []
+    assert r.json()["published_results"] == 0
 
 
 async def test_cross_role_rejection_examiner_cant_see_admin_stats(client: AsyncClient, db: AsyncSession):

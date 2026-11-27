@@ -445,6 +445,12 @@ async def submit_attempt(db: AsyncSession, candidate: User, attempt_id: int) -> 
     attempt.submitted_at = now
     await db.commit()
     await db.refresh(attempt)
+
+    # Auto-grade objective questions and initialize result
+    from app.services.grading import auto_grade_attempt, _upsert_result
+    await auto_grade_attempt(db, attempt.id)
+    await _upsert_result(db, attempt)
+
     return attempt
 
 

@@ -28,6 +28,23 @@ class AttemptStatus(str, enum.Enum):
     EXPIRED = "EXPIRED"
 
 
+class GradingStatus(str, enum.Enum):
+    AUTO = "AUTO"       # objective question, marks assigned automatically
+    PENDING = "PENDING" # written question, awaiting manual grading
+    GRADED = "GRADED"   # written question, marks assigned by examiner
+
+
+class ResultStatus(str, enum.Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+
+
+class ResultPublicationStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    GRADED = "GRADED"
+    PUBLISHED = "PUBLISHED"
+
+
 class Enrollment(Base):
     __tablename__ = "enrollments"
     __table_args__ = (UniqueConstraint("examination_id", "candidate_id"),)
@@ -148,6 +165,60 @@ class Response(Base):
     saved_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    # Grading fields
+    awarded_marks: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    grading_status: Mapped[GradingStatus | None] = mapped_column(
+        Enum(GradingStatus, name="gradingstatus"), nullable=True
+    )
+    examiner_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    graded_by_id: Mapped[PyUUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    graded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     attempt = relationship("Attempt", back_populates="responses")
     attempt_question = relationship("AttemptQuestion", back_populates="response")
+    graded_by = relationship("User", foreign_keys=[graded_by_id])
+
+
+class Result(Base):
+    __tablename__ = "results"
+    __table_args__ = (UniqueConstraint("attempt_id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    attempt_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("attempts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    candidate_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    examination_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("examinations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    total_marks: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    obtained_marks: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    percentage: Mapped[float] = mapped_column(Numeric(7, 4), nullable=False, default=0)
+    passing_marks: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    result_status: Mapped[ResultStatus | None] = mapped_column(
+        Enum(ResultStatus, name="resultstatus"), nullable=True
+    )
+    publication_status: Mapped[ResultPublicationStatus] = mapped_column(
+        Enum(ResultPublicationStatus, name="resultpublicationstatus"),
+        default=ResultPublicationStatus.PENDING,
+        nullable=False,
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_by_id: Mapped[PyUUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    attempt = relationship("Attempt")
+    candidate = relationship("User", foreign_keys=[candidate_id])
+    examination = relationship("Examination")
+    published_by = relationship("User", foreign_keys=[published_by_id])

@@ -6,7 +6,7 @@ from app.db.deps import get_db
 from app.core.deps import require_admin, require_examiner, require_candidate, get_current_user
 from app.models.user import User, Role, AuditLog
 from app.models.exam import Examination, ExamStatus, Question
-from app.models.candidate import Enrollment
+from app.models.candidate import Enrollment, Attempt, AttemptStatus, Result, ResultPublicationStatus, GradingStatus, Response
 from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -107,12 +107,34 @@ async def examiner_stats(
         .where(Examination.creator_id == current_user.id)
     )).scalar_one()
 
+    submitted_attempts = (await db.execute(
+        select(func.count(Attempt.id))
+        .join(Examination, Examination.id == Attempt.examination_id)
+        .where(Examination.creator_id == current_user.id, Attempt.status == AttemptStatus.SUBMITTED)
+    )).scalar_one()
+
+    pending_grading = (await db.execute(
+        select(func.count(Response.id))
+        .join(Attempt, Attempt.id == Response.attempt_id)
+        .join(Examination, Examination.id == Attempt.examination_id)
+        .where(Examination.creator_id == current_user.id, Response.grading_status == GradingStatus.PENDING)
+    )).scalar_one()
+
+    published_results = (await db.execute(
+        select(func.count(Result.id))
+        .join(Examination, Examination.id == Result.examination_id)
+        .where(Examination.creator_id == current_user.id, Result.publication_status == ResultPublicationStatus.PUBLISHED)
+    )).scalar_one()
+
     return {
         "total_examinations": total_exams,
         "published_examinations": published,
         "draft_examinations": draft,
         "total_questions": total_questions,
         "enrolled_candidates": enrolled_candidates,
+        "submitted_attempts": submitted_attempts,
+        "pending_grading": pending_grading,
+        "published_results": published_results,
     }
 
 
@@ -164,12 +186,18 @@ async def candidate_summary(
             Attempt.status == AttemptStatus.IN_PROGRESS,
         )
     )).scalar_one()
+    published_results = (await db.execute(
+        select(func.count(Result.id)).where(
+            Result.candidate_id == current_user.id,
+            Result.publication_status == ResultPublicationStatus.PUBLISHED,
+        )
+    )).scalar_one()
     return {
         "assigned_examinations": assigned,
         "upcoming_examinations": max(0, assigned - completed - in_progress),
         "completed_examinations": completed,
         "in_progress_examinations": in_progress,
-        "published_results": 0,
+        "published_results": published_results,
     }
 
 
@@ -200,6 +228,15 @@ async def candidate_recent_exams(
     return {"items": items, "total": len(items)}
 
 
-@router.get("/candidate/results")
-async def candidate_results(_: User = Depends(require_candidate)):
-    return {"items": [], "total": 0}
+@router.get("/candidate/results-summary")
+async def candidate_results_summary(
+    current_user: User = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    published_count = (await db.execute(
+        select(func.count(Result.id)).where(
+            Result.candidate_id == current_user.id,
+            Result.publication_status == ResultPublicationStatus.PUBLISHED,
+        )
+    )).scalar_one()
+    return {"published_results": published_count}

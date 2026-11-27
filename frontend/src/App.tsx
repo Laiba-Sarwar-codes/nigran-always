@@ -14,6 +14,11 @@ import ExaminationsPage from '@/pages/ExaminationsPage'
 import ExamDetailPage from '@/pages/ExamDetailPage'
 import CandidateExamsPage from '@/pages/CandidateExamsPage'
 import ExamWorkspacePage from '@/pages/ExamWorkspacePage'
+import ExamSubmissionsPage from '@/pages/ExamSubmissionsPage'
+import ExaminerSubmissionsPage from '@/pages/ExaminerSubmissionsPage'
+import AttemptGradingPage from '@/pages/AttemptGradingPage'
+import ExamResultsPage from '@/pages/ExamResultsPage'
+import CandidateResultsPage from '@/pages/CandidateResultsPage'
 
 export default function App() {
   return (
@@ -59,6 +64,18 @@ export default function App() {
         <Route path="/examiner/exams/:id" element={
           <ProtectedRoute roles={['EXAMINER']}><ExamDetailPage /></ProtectedRoute>
         } />
+        <Route path="/examiner/submissions" element={
+          <ProtectedRoute roles={['EXAMINER']}><ExaminerSubmissionsPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/exams/:examId/submissions" element={
+          <ProtectedRoute roles={['EXAMINER']}><ExamSubmissionsPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/attempts/:attemptId/grade" element={
+          <ProtectedRoute roles={['EXAMINER']}><AttemptGradingPage /></ProtectedRoute>
+        } />
+        <Route path="/examiner/exams/:examId/results" element={
+          <ProtectedRoute roles={['EXAMINER']}><ExamResultsPage /></ProtectedRoute>
+        } />
 
         {/* Candidate */}
         <Route path="/candidate/dashboard" element={
@@ -69,6 +86,9 @@ export default function App() {
         } />
         <Route path="/candidate/exam/:examId" element={
           <ProtectedRoute roles={['CANDIDATE']}><ExamWorkspacePage /></ProtectedRoute>
+        } />
+        <Route path="/candidate/results" element={
+          <ProtectedRoute roles={['CANDIDATE']}><CandidateResultsPage /></ProtectedRoute>
         } />
 
         <Route path="*" element={<Navigate to="/" replace />} />
