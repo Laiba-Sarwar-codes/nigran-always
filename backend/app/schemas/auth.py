@@ -26,7 +26,7 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str  # accept any format; backend verifies against stored email
     password: str
 
 

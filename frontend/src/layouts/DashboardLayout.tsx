@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getHealth } from '@/services/health'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import type { Role } from '@/types/auth'
@@ -86,6 +88,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { data: health, isError: healthError } = useQuery({
+    queryKey: ['health'],
+    queryFn: getHealth,
+    refetchInterval: 30000,
+    retry: 1,
+  })
+  const systemOk = !healthError && health?.status === 'ok'
 
   const role = user?.role ?? 'CANDIDATE'
   const navItems = navByRole[role] ?? []
@@ -177,10 +186,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Bottom */}
       <div className="px-2 py-3 border-t flex-shrink-0 space-y-1" style={{ borderColor: '#1e3d34' }}>
         <div className="px-3 py-2 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${systemOk ? 'bg-emerald-400' : 'bg-amber-400'}`} />
           <div className="min-w-0">
-            <div className="text-[11px] font-semibold" style={{ color: '#d1e8df' }}>All systems steady</div>
-            <div className="text-[10px]" style={{ color: '#7ba898' }}>Last checked just now</div>
+            <div className="text-[11px] font-semibold" style={{ color: '#d1e8df' }}>
+              {systemOk ? 'All systems steady' : 'Service degraded'}
+            </div>
+            <div className="text-[10px]" style={{ color: '#7ba898' }}>
+              {systemOk ? 'Backend connected' : 'Check backend status'}
+            </div>
           </div>
         </div>
         <button

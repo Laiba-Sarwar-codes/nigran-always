@@ -52,15 +52,15 @@ async def seed():
     async with Session() as session:
         async with session.begin():
             print("\n── Users ────────────────────────────────")
-            admin, _ = await get_or_create_user(session, "admin@nigrani.local", "System Administrator", Role.ADMIN)
-            examiner1, _ = await get_or_create_user(session, "examiner1@nigrani.local", f"{DEMO_TAG} Dr. Ayesha Khan", Role.EXAMINER, "Exam@1234")
-            examiner2, _ = await get_or_create_user(session, "examiner2@nigrani.local", f"{DEMO_TAG} Prof. Bilal Raza", Role.EXAMINER, "Exam@1234")
+            admin, _ = await get_or_create_user(session, "admin@nigran360.dev", "System Administrator", Role.ADMIN, "Admin@1234")
+            examiner1, _ = await get_or_create_user(session, "examiner1@nigran360.dev", f"{DEMO_TAG} Dr. Ayesha Khan", Role.EXAMINER, "Exam@1234")
+            examiner2, _ = await get_or_create_user(session, "examiner2@nigran360.dev", f"{DEMO_TAG} Prof. Bilal Raza", Role.EXAMINER, "Exam@1234")
             candidates = []
             demo_students = [
-                ("student1@nigrani.local", f"{DEMO_TAG} Sara Ahmed"),
-                ("student2@nigrani.local", f"{DEMO_TAG} Ali Hassan"),
-                ("student3@nigrani.local", f"{DEMO_TAG} Zara Malik"),
-                ("student4@nigrani.local", f"{DEMO_TAG} Umar Farooq"),
+                ("student1@nigran360.dev", f"{DEMO_TAG} Sara Ahmed"),
+                ("student2@nigran360.dev", f"{DEMO_TAG} Ali Hassan"),
+                ("student3@nigran360.dev", f"{DEMO_TAG} Zara Malik"),
+                ("student4@nigran360.dev", f"{DEMO_TAG} Umar Farooq"),
             ]
             for email, name in demo_students:
                 c, _ = await get_or_create_user(session, email, name, Role.CANDIDATE, "Student@1234")
@@ -272,10 +272,10 @@ async def seed():
 
             await session.flush()
             print("\n── Seed complete ────────────────────────")
-            print("  Admin:     admin@nigrani.local         / (existing password)")
-            print("  Examiner1: examiner1@nigrani.local     / Exam@1234")
-            print("  Examiner2: examiner2@nigrani.local     / Exam@1234")
-            print("  Students:  student1-4@nigrani.local    / Student@1234")
+            print("  Admin:     admin@nigran360.dev         / Admin@1234")
+            print("  Examiner1: examiner1@nigran360.dev     / Exam@1234")
+            print("  Examiner2: examiner2@nigran360.dev     / Exam@1234")
+            print("  Students:  student1-4@nigran360.dev    / Student@1234")
             print()
 
 
